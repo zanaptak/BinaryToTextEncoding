@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29215.179
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "BinaryToTextEncoding", "BinaryToTextEncoding.fsproj", "{B01382CA-436B-40B7-B347-337D93EC988E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B01382CA-436B-40B7-B347-337D93EC988E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B01382CA-436B-40B7-B347-337D93EC988E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B01382CA-436B-40B7-B347-337D93EC988E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B01382CA-436B-40B7-B347-337D93EC988E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D60E8D26-2AFD-4672-9C32-E894F7C81752}
+	EndGlobalSection
+EndGlobal

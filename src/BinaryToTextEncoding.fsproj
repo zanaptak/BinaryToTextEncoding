@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+    <Version>0.1.0</Version>
+    <Authors>zanaptak</Authors>
+    <AssemblyName>Zanaptak.BinaryToTextEncoding</AssemblyName>
+    <Product>Zanaptak.BinaryToTextEncoding</Product>
+    <PackageId>Zanaptak.BinaryToTextEncoding</PackageId>
+    <RepositoryUrl>https://github.com/zanaptak/BinaryToTextEncoding.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/zanaptak/BinaryToTextEncoding</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/zanaptak/BinaryToTextEncoding/releases</PackageReleaseNotes>
+    <PackageTags>base16;base32;base46;base64;base91;.net;fable</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>A binary-to-text encoder/decoder library for .NET and Fable. Provides base 16, base 32, base 46, base 64, and base 91 codecs. Supports custom character sets.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Utils.fs" />
+    <Compile Include="Base16.fs" />
+    <Compile Include="Base32.fs" />
+    <Compile Include="Base46.fs" />
+    <Compile Include="Base64.fs" />
+    <Compile Include="Base91.fs" />
+    <Compile Include="Base91Legacy.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="*.fsproj; *.fs" PackagePath="fable\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.3.4" />
+  </ItemGroup>
+
+</Project>
