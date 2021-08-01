@@ -17,344 +17,344 @@ let ``legacy rnd1 bytes`` = ``legacy rnd1 as hex`` |> Seq.chunkBySize 2 |> Seq.m
 let ``legacy rnd1 encoded`` = """SRdJj7WdMpu9rVspWy=C`+p=a<R>M8gO|71mikcp!RYpbTRfTG3zP*LX3Mx/@nAZm}&uOehnuuZu=h|;QGQT"a)cAR.#gmGq6)!wVMDAq^rUzpJ8!zLDJ$<L&w(u:gIl,a!w`(QD#|1O4U)%ilIS>(HVA,CF)&vrl;^:bgUT^=H6>z,>ijx(Dg9ziaN(I0rG<MEyc`;n)p/aX4C]+4hq^#^E^z^Q#yfgf]3]DGci_Z%5![`$H(b4wUTg<tZd_h_tq_vAtwf*~4KNCTxK+N5"C|/22mrAs5mESHgP{N{WWRjOr^a6BQ$R(%VW9/b}NC7CCZ_}xoH#Q;sh&R>P^~Rdw]fLV9vaLSRSN,G`7_;VhS<<a$#hGgra!3r}}RNjZm5DHA/3hwVdIc"Xmq9V95r.9*e$**Qg=L$J~n+<3ywJvJ`ET0"OJaPIk$|qRcnk.)*6<7SiJ6?hFp^s}p5pjvWV#yT._.l+@z98Mj9e=?Q0Z]D,S;>0tZlu7UTcwBn^ffA16WL>r[D{Guz5|JK.&fA6K?~8aM)e(1U"#=^6)Eu4@>c4Q58R,&IA+rV|bek::o9Hbfot/n.mZSYxNs53)d&7Ez2*^`sS~,s7>T={bO4F#H_Sl"H,}hY62HD6B|KS`Z[=&YgPDjR+Os0}~t9/#d3pPX$gBrt*$mbxc@%uO{iL.g~S$KtfJ%`=tTY&8_>P>L&FxRj<}T*/oHAtaKxH,N7cWQhH79Mlj{iPfqec!oyWgyoD0(Ug2O#0EqzZ(*kBp[I)0C"""
 
 let testRandomMultiple encodeFn decodeFn lower upper count =
-  let seed = System.Random().Next()
-  let r = System.Random( seed )
-  for i in 1 .. count do
-    let size = r.Next( lower , upper )
-    let bytes : byte array = Array.zeroCreate size
-    r.NextBytes bytes
-    let enc = encodeFn bytes
-    let dec = decodeFn enc
-    Expect.equal dec bytes ( sprintf "failed with seed %i on index %i" seed i )
+    let seed = System.Random().Next()
+    let r = System.Random( seed )
+    for i in 1 .. count do
+        let size = r.Next( lower , upper )
+        let bytes : byte array = Array.zeroCreate size
+        r.NextBytes bytes
+        let enc = encodeFn bytes
+        let dec = decodeFn enc
+        Expect.equal dec bytes ( sprintf "failed with seed %i on index %i" seed i )
 
 let Base16Tests =
-  let base16ConsonantsCharacterSet = "BCDFHJKMNPQRSTXZ"
+    let base16ConsonantsCharacterSet = "BCDFHJKMNPQRSTXZ"
 
-  testList "Base16" [
-    testCase "encode empty" <| fun () ->
-      Expect.equal ( Base16.Default.Encode [||] ) "" ""
+    testList "Base16" [
+        testCase "encode empty" <| fun () ->
+            Expect.equal ( Base16.Default.Encode [||] ) "" ""
 
-    testCase "decode empty" <| fun () ->
-      Expect.equal ( Base16.Default.Decode "" ) [||] ""
+        testCase "decode empty" <| fun () ->
+            Expect.equal ( Base16.Default.Decode "" ) [||] ""
 
-    testCase "encode default" <| fun () ->
-      Expect.equal ( Base16.Default.Encode bytes ) "00FF00FF00FF00FF" ""
+        testCase "encode default" <| fun () ->
+            Expect.equal ( Base16.Default.Encode bytes ) "00FF00FF00FF00FF" ""
 
-    testCase "decode default" <| fun () ->
-      Expect.equal ( Base16.Default.Decode "00FF00FF00FF00FF" ) bytes ""
+        testCase "decode default" <| fun () ->
+            Expect.equal ( Base16.Default.Decode "00FF00FF00FF00FF" ) bytes ""
 
-    testCase "encode consonants" <| fun () ->
-      Expect.equal ( Base16( base16ConsonantsCharacterSet ).Encode bytes ) "BBZZBBZZBBZZBBZZ" ""
+        testCase "encode consonants" <| fun () ->
+            Expect.equal ( Base16( base16ConsonantsCharacterSet ).Encode bytes ) "BBZZBBZZBBZZBBZZ" ""
 
-    testCase "decode consonants" <| fun () ->
-      Expect.equal ( Base16( base16ConsonantsCharacterSet ).Decode "BBZZBBZZBBZZBBZZ" ) bytes ""
+        testCase "decode consonants" <| fun () ->
+            Expect.equal ( Base16( base16ConsonantsCharacterSet ).Decode "BBZZBBZZBBZZBBZZ" ) bytes ""
 
-    testCase "round trip default" <| fun () ->
-      testRandomMultiple Base16.Default.Encode Base16.Default.Decode 0 99 999
+        testCase "round trip default" <| fun () ->
+            testRandomMultiple Base16.Default.Encode Base16.Default.Decode 0 99 999
 
-    testCase "round trip consonants" <| fun () ->
-      let codec = Base16( base16ConsonantsCharacterSet )
-      testRandomMultiple codec.Encode codec.Decode 0 99 999
+        testCase "round trip consonants" <| fun () ->
+            let codec = Base16( base16ConsonantsCharacterSet )
+            testRandomMultiple codec.Encode codec.Decode 0 99 999
 
-    testCase "encode wrap crlf default" <| fun () ->
-      Expect.equal ( Base16.Default.Encode( bytes , 4 ) ) "00FF\r\n00FF\r\n00FF\r\n00FF" ""
+        testCase "encode wrap crlf default" <| fun () ->
+            Expect.equal ( Base16.Default.Encode( bytes , 4 ) ) "00FF\r\n00FF\r\n00FF\r\n00FF" ""
 
-    testCase "encode wrap lf configured" <| fun () ->
-      Expect.equal ( Base16( useCrLfNewline = false ).Encode( bytes , 4 ) ) "00FF\n00FF\n00FF\n00FF" ""
-  ]
+        testCase "encode wrap lf configured" <| fun () ->
+            Expect.equal ( Base16( useCrLfNewline = false ).Encode( bytes , 4 ) ) "00FF\n00FF\n00FF\n00FF" ""
+    ]
 
 let Base32Tests =
-  let base32ConsonantsCharSet = "BCDFHJKMNPQRSTXZbcdfhjkmnpqrstxz"
+    let base32ConsonantsCharSet = "BCDFHJKMNPQRSTXZbcdfhjkmnpqrstxz"
 
-  testList "Base32" [
-    testCase "encode empty" <| fun () ->
-      Expect.equal ( Base32.Default.Encode [||] ) "" ""
+    testList "Base32" [
+        testCase "encode empty" <| fun () ->
+            Expect.equal ( Base32.Default.Encode [||] ) "" ""
 
-    testCase "decode empty" <| fun () ->
-      Expect.equal ( Base32.Default.Decode "" ) [||] ""
+        testCase "decode empty" <| fun () ->
+            Expect.equal ( Base32.Default.Decode "" ) [||] ""
 
-    testCase "encode default" <| fun () ->
-      Expect.equal ( Base32.Default.Encode bytes ) "AD7QB7YA74AP6" ""
+        testCase "encode default" <| fun () ->
+            Expect.equal ( Base32.Default.Encode bytes ) "AD7QB7YA74AP6" ""
 
-    testCase "decode default" <| fun () ->
-      Expect.equal ( Base32.Default.Decode "AD7QB7YA74AP6" ) bytes ""
+        testCase "decode default" <| fun () ->
+            Expect.equal ( Base32.Default.Decode "AD7QB7YA74AP6" ) bytes ""
 
-    testCase "encode consonants" <| fun () ->
-      Expect.equal ( Base32( base32ConsonantsCharSet ).Encode bytes ) "BFzbCznBzsBZx" ""
+        testCase "encode consonants" <| fun () ->
+            Expect.equal ( Base32( base32ConsonantsCharSet ).Encode bytes ) "BFzbCznBzsBZx" ""
 
-    testCase "decode consonants" <| fun () ->
-      Expect.equal ( Base32( base32ConsonantsCharSet ).Decode "BFzbCznBzsBZx" ) bytes ""
+        testCase "decode consonants" <| fun () ->
+            Expect.equal ( Base32( base32ConsonantsCharSet ).Decode "BFzbCznBzsBZx" ) bytes ""
 
-    testCase "round trip default" <| fun () ->
-      testRandomMultiple Base32.Default.Encode Base32.Default.Decode 0 99 999
+        testCase "round trip default" <| fun () ->
+            testRandomMultiple Base32.Default.Encode Base32.Default.Decode 0 99 999
 
-    testCase "round trip consonants" <| fun () ->
-      let codec = Base32( base32ConsonantsCharSet )
-      testRandomMultiple codec.Encode codec.Decode 0 99 999
+        testCase "round trip consonants" <| fun () ->
+            let codec = Base32( base32ConsonantsCharSet )
+            testRandomMultiple codec.Encode codec.Decode 0 99 999
 
-    testCase "encode wrap crlf default" <| fun () ->
-      Expect.equal ( Base32.Default.Encode( bytes , 4 ) ) "AD7Q\r\nB7YA\r\n74AP\r\n6" ""
+        testCase "encode wrap crlf default" <| fun () ->
+            Expect.equal ( Base32.Default.Encode( bytes , 4 ) ) "AD7Q\r\nB7YA\r\n74AP\r\n6" ""
 
-    testCase "encode wrap lf configured" <| fun () ->
-      Expect.equal ( Base32( useCrLfNewline = false ).Encode( bytes , 4 ) ) "AD7Q\nB7YA\n74AP\n6" ""
-  ]
+        testCase "encode wrap lf configured" <| fun () ->
+            Expect.equal ( Base32( useCrLfNewline = false ).Encode( bytes , 4 ) ) "AD7Q\nB7YA\n74AP\n6" ""
+    ]
 
 let Base46Tests =
-  let base46LettersCharSet = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz"
+    let base46LettersCharSet = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz"
 
-  testList "Base46" [
-    testCase "encode empty" <| fun () ->
-      Expect.equal ( Base46.Default.Encode [||] ) "" ""
+    testList "Base46" [
+        testCase "encode empty" <| fun () ->
+            Expect.equal ( Base46.Default.Encode [||] ) "" ""
 
-    testCase "decode empty" <| fun () ->
-      Expect.equal ( Base46.Default.Decode "" ) [||] ""
+        testCase "decode empty" <| fun () ->
+            Expect.equal ( Base46.Default.Decode "" ) [||] ""
 
-    testCase "encode default" <| fun () ->
-      Expect.equal ( Base46.Default.Encode bytes ) "2CxBH62NvmWD" ""
+        testCase "encode default" <| fun () ->
+            Expect.equal ( Base46.Default.Encode bytes ) "2CxBH62NvmWD" ""
 
-    testCase "decode default" <| fun () ->
-      Expect.equal ( Base46.Default.Decode "2CxBH62NvmWD" ) bytes ""
+        testCase "decode default" <| fun () ->
+            Expect.equal ( Base46.Default.Decode "2CxBH62NvmWD" ) bytes ""
 
-    testCase "encode letters" <| fun () ->
-      Expect.equal ( Base46( base46LettersCharSet ).Encode bytes ) "AHxGNEASvnZJ" ""
+        testCase "encode letters" <| fun () ->
+            Expect.equal ( Base46( base46LettersCharSet ).Encode bytes ) "AHxGNEASvnZJ" ""
 
-    testCase "decode letters" <| fun () ->
-      Expect.equal ( Base46( base46LettersCharSet ).Decode "AHxGNEASvnZJ" ) bytes ""
+        testCase "decode letters" <| fun () ->
+            Expect.equal ( Base46( base46LettersCharSet ).Decode "AHxGNEASvnZJ" ) bytes ""
 
-    testCase "round trip default" <| fun () ->
-      testRandomMultiple Base46.Default.Encode Base46.Default.Decode 0 99 999
+        testCase "round trip default" <| fun () ->
+            testRandomMultiple Base46.Default.Encode Base46.Default.Decode 0 99 999
 
-    testCase "round trip letters" <| fun () ->
-      let codec = Base46( base46LettersCharSet )
-      testRandomMultiple codec.Encode codec.Decode 0 99 999
+        testCase "round trip letters" <| fun () ->
+            let codec = Base46( base46LettersCharSet )
+            testRandomMultiple codec.Encode codec.Decode 0 99 999
 
-    testCase "encode wrap crlf default" <| fun () ->
-      Expect.equal ( Base46.Default.Encode( bytes , 4 ) ) "2CxB\r\nH62N\r\nvmWD" ""
+        testCase "encode wrap crlf default" <| fun () ->
+            Expect.equal ( Base46.Default.Encode( bytes , 4 ) ) "2CxB\r\nH62N\r\nvmWD" ""
 
-    testCase "encode wrap lf configured" <| fun () ->
-      Expect.equal ( Base46( useCrLfNewline = false ).Encode( bytes , 4 ) ) "2CxB\nH62N\nvmWD" ""
+        testCase "encode wrap lf configured" <| fun () ->
+            Expect.equal ( Base46( useCrLfNewline = false ).Encode( bytes , 4 ) ) "2CxB\nH62N\nvmWD" ""
 
-    testCase "encode 11 bytes to 16 chars" <| fun () ->
-      let chars16 = String ( Array.create 16 '2' )
-      let bytes11 = Array.create 11 0uy
-      Expect.equal ( Base46.Default.Encode bytes11 ) chars16 ""
+        testCase "encode 11 bytes to 16 chars" <| fun () ->
+            let chars16 = String ( Array.create 16 '2' )
+            let bytes11 = Array.create 11 0uy
+            Expect.equal ( Base46.Default.Encode bytes11 ) chars16 ""
 
-    testCase "decode 16 chars to 11 bytes" <| fun () ->
-      let chars16 = String ( Array.create 16 '2' )
-      let bytes11 = Array.create 11 0uy
-      Expect.equal ( Base46.Default.Decode chars16 ) bytes11 ""
-  ]
+        testCase "decode 16 chars to 11 bytes" <| fun () ->
+            let chars16 = String ( Array.create 16 '2' )
+            let bytes11 = Array.create 11 0uy
+            Expect.equal ( Base46.Default.Decode chars16 ) bytes11 ""
+    ]
 
 let Base64Tests =
 
-  testList "Base64" [
-    testCase "encode empty" <| fun () ->
-      Expect.equal ( Base64.Default.Encode [||] ) "" ""
+    testList "Base64" [
+        testCase "encode empty" <| fun () ->
+            Expect.equal ( Base64.Default.Encode [||] ) "" ""
 
-    testCase "decode empty" <| fun () ->
-      Expect.equal ( Base64.Default.Decode "" ) [||] ""
+        testCase "decode empty" <| fun () ->
+            Expect.equal ( Base64.Default.Decode "" ) [||] ""
 
-    testCase "encode default" <| fun () ->
-      Expect.equal ( Base64.Default.Encode bytes ) "AP8A/wD/AP8" ""
+        testCase "encode default" <| fun () ->
+            Expect.equal ( Base64.Default.Encode bytes ) "AP8A/wD/AP8" ""
 
-    testCase "decode default" <| fun () ->
-      Expect.equal ( Base64.Default.Decode "AP8A/wD/AP8" ) bytes ""
+        testCase "decode default" <| fun () ->
+            Expect.equal ( Base64.Default.Decode "AP8A/wD/AP8" ) bytes ""
 
-    testCase "encode urlsafe" <| fun () ->
-      Expect.equal ( Base64( Base64.UrlSafeCharacterSet ).Encode bytes ) "AP8A_wD_AP8" ""
+        testCase "encode urlsafe" <| fun () ->
+            Expect.equal ( Base64( Base64.UrlSafeCharacterSet ).Encode bytes ) "AP8A_wD_AP8" ""
 
-    testCase "decode urlsafe" <| fun () ->
-      Expect.equal ( Base64( Base64.UrlSafeCharacterSet ).Decode "AP8A_wD_AP8" ) bytes ""
+        testCase "decode urlsafe" <| fun () ->
+            Expect.equal ( Base64( Base64.UrlSafeCharacterSet ).Decode "AP8A_wD_AP8" ) bytes ""
 
-    testCase "round trip default" <| fun () ->
-      testRandomMultiple Base64.Default.Encode Base64.Default.Decode 0 99 999
+        testCase "round trip default" <| fun () ->
+            testRandomMultiple Base64.Default.Encode Base64.Default.Decode 0 99 999
 
-    testCase "round trip urlsafe" <| fun () ->
-      let codec = Base64( Base64.UrlSafeCharacterSet )
-      testRandomMultiple codec.Encode codec.Decode 0 99 999
+        testCase "round trip urlsafe" <| fun () ->
+            let codec = Base64( Base64.UrlSafeCharacterSet )
+            testRandomMultiple codec.Encode codec.Decode 0 99 999
 
-    testCase "encode wrap crlf default" <| fun () ->
-      Expect.equal ( Base64.Default.Encode( bytes , 4 ) ) "AP8A\r\n/wD/\r\nAP8" ""
+        testCase "encode wrap crlf default" <| fun () ->
+            Expect.equal ( Base64.Default.Encode( bytes , 4 ) ) "AP8A\r\n/wD/\r\nAP8" ""
 
-    testCase "encode wrap lf configured" <| fun () ->
-      Expect.equal ( Base64( useCrLfNewline = false ).Encode( bytes , 4 ) ) "AP8A\n/wD/\nAP8" ""
-  ]
+        testCase "encode wrap lf configured" <| fun () ->
+            Expect.equal ( Base64( useCrLfNewline = false ).Encode( bytes , 4 ) ) "AP8A\n/wD/\nAP8" ""
+    ]
 
 let Base91Tests =
-  testList "Base91" [
-    testCase "encode empty" <| fun () ->
-      Expect.equal ( Base91.Default.Encode [||] ) "" ""
+    testList "Base91" [
+        testCase "encode empty" <| fun () ->
+            Expect.equal ( Base91.Default.Encode [||] ) "" ""
 
-    testCase "decode empty" <| fun () ->
-      Expect.equal ( Base91.Default.Decode "" ) [||] ""
+        testCase "decode empty" <| fun () ->
+            Expect.equal ( Base91.Default.Decode "" ) [||] ""
 
-    testCase "encode" <| fun () ->
-      Expect.equal ( Base91.Default.Encode bytes ) "!Brm|[Op(Z" ""
+        testCase "encode" <| fun () ->
+            Expect.equal ( Base91.Default.Encode bytes ) "!Brm|[Op(Z" ""
 
-    testCase "decode" <| fun () ->
-      Expect.equal ( Base91.Default.Decode "!Brm|[Op(Z" ) bytes ""
+        testCase "decode" <| fun () ->
+            Expect.equal ( Base91.Default.Decode "!Brm|[Op(Z" ) bytes ""
 
-    testCase "round trip default" <| fun () ->
-      testRandomMultiple Base91.Default.Encode Base91.Default.Decode 0 99 999
+        testCase "round trip default" <| fun () ->
+            testRandomMultiple Base91.Default.Encode Base91.Default.Decode 0 99 999
 
-    testCase "encode wrap crlf default" <| fun () ->
-      Expect.equal ( Base91.Default.Encode( bytes , 4 ) ) "!Brm\r\n|[Op\r\n(Z" ""
+        testCase "encode wrap crlf default" <| fun () ->
+            Expect.equal ( Base91.Default.Encode( bytes , 4 ) ) "!Brm\r\n|[Op\r\n(Z" ""
 
-    testCase "encode wrap lf configured" <| fun () ->
-      Expect.equal ( Base91( useCrLfNewline = false ).Encode( bytes , 4 ) ) "!Brm\n|[Op\n(Z" ""
+        testCase "encode wrap lf configured" <| fun () ->
+            Expect.equal ( Base91( useCrLfNewline = false ).Encode( bytes , 4 ) ) "!Brm\n|[Op\n(Z" ""
 
-    testCase "encode 13 bytes to 16 chars" <| fun () ->
-      let chars16 = String ( Array.create 16 '!' )
-      let bytes13 = Array.create 13 0uy
-      Expect.equal ( Base91.Default.Encode bytes13 ) chars16 ""
+        testCase "encode 13 bytes to 16 chars" <| fun () ->
+            let chars16 = String ( Array.create 16 '!' )
+            let bytes13 = Array.create 13 0uy
+            Expect.equal ( Base91.Default.Encode bytes13 ) chars16 ""
 
-    testCase "decode 16 chars to 13 bytes" <| fun () ->
-      let chars16 = String ( Array.create 16 '!' )
-      let bytes13 = Array.create 13 0uy
-      Expect.equal ( Base91.Default.Decode chars16 ) bytes13 ""
-  ]
+        testCase "decode 16 chars to 13 bytes" <| fun () ->
+            let chars16 = String ( Array.create 16 '!' )
+            let bytes13 = Array.create 13 0uy
+            Expect.equal ( Base91.Default.Decode chars16 ) bytes13 ""
+    ]
 
 let Base91LegacyTests =
-  testList "Base91Legacy" [
-    testCase "encode empty" <| fun () ->
-      Expect.equal ( Base91Legacy.Default.Encode [||] ) "" ""
+    testList "Base91Legacy" [
+        testCase "encode empty" <| fun () ->
+            Expect.equal ( Base91Legacy.Default.Encode [||] ) "" ""
 
-    testCase "decode empty" <| fun () ->
-      Expect.equal ( Base91Legacy.Default.Decode "" ) [||] ""
+        testCase "decode empty" <| fun () ->
+            Expect.equal ( Base91Legacy.Default.Decode "" ) [||] ""
 
-    testCase "encode" <| fun () ->
-      Expect.equal ( Base91Legacy.Default.Encode bytes ) "T|2(#A/CmW" ""
+        testCase "encode" <| fun () ->
+            Expect.equal ( Base91Legacy.Default.Encode bytes ) "T|2(#A/CmW" ""
 
-    testCase "decode" <| fun () ->
-      Expect.equal ( Base91Legacy.Default.Decode "T|2(#A/CmW" ) bytes ""
+        testCase "decode" <| fun () ->
+            Expect.equal ( Base91Legacy.Default.Decode "T|2(#A/CmW" ) bytes ""
 
-    testCase "encode rnd1" <| fun () ->
-      Expect.equal ( Base91Legacy.Default.Encode ``legacy rnd1 bytes`` ) ``legacy rnd1 encoded`` ""
+        testCase "encode rnd1" <| fun () ->
+            Expect.equal ( Base91Legacy.Default.Encode ``legacy rnd1 bytes`` ) ``legacy rnd1 encoded`` ""
 
-    testCase "decode rnd1" <| fun () ->
-      Expect.equal ( Base91Legacy.Default.Decode ``legacy rnd1 encoded`` ) ``legacy rnd1 bytes`` ""
+        testCase "decode rnd1" <| fun () ->
+            Expect.equal ( Base91Legacy.Default.Decode ``legacy rnd1 encoded`` ) ``legacy rnd1 bytes`` ""
 
-    testCase "round trip default" <| fun () ->
-      testRandomMultiple Base91Legacy.Default.Encode Base91Legacy.Default.Decode 0 99 999
-  ]
+        testCase "round trip default" <| fun () ->
+            testRandomMultiple Base91Legacy.Default.Encode Base91Legacy.Default.Decode 0 99 999
+    ]
 
 #if ! FABLE_COMPILER
 let Base16ExceptionTests =
-  testList "Base16ExceptionTests" [
-    testCase "invalid char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base16.Default.Decode "B'C" |> ignore ) ""
+    testList "Base16ExceptionTests" [
+        testCase "invalid char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base16.Default.Decode "B'C" |> ignore ) ""
 
-    testCase "control char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base16.Default.Decode "B\x1BC" |> ignore ) ""
+        testCase "control char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base16.Default.Decode "B\x1BC" |> ignore ) ""
 
-    testCase "high char outside range throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base16.Default.Decode "B±C" |> ignore ) ""
-  ]
+        testCase "high char outside range throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base16.Default.Decode "B±C" |> ignore ) ""
+    ]
 
 let Base32ExceptionTests =
-  testList "Base32ExceptionTests" [
-    testCase "invalid char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base32.Default.Decode "B'C" |> ignore ) ""
+    testList "Base32ExceptionTests" [
+        testCase "invalid char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base32.Default.Decode "B'C" |> ignore ) ""
 
-    testCase "control char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base32.Default.Decode "B\x1BC" |> ignore ) ""
+        testCase "control char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base32.Default.Decode "B\x1BC" |> ignore ) ""
 
-    testCase "high char outside range throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base32.Default.Decode "B±C" |> ignore ) ""
-  ]
+        testCase "high char outside range throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base32.Default.Decode "B±C" |> ignore ) ""
+    ]
 
 let Base46ExceptionTests =
-  testList "Base46ExceptionTests" [
-    testCase "invalid char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "B'C" |> ignore ) ""
+    testList "Base46ExceptionTests" [
+        testCase "invalid char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "B'C" |> ignore ) ""
 
-    testCase "control char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "B\x1BC" |> ignore ) ""
+        testCase "control char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "B\x1BC" |> ignore ) ""
 
-    testCase "high char outside range throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "B±C" |> ignore ) ""
+        testCase "high char outside range throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "B±C" |> ignore ) ""
 
-    testCase "throws on 1 char" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "2" |> ignore ) ""
+        testCase "throws on 1 char" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "2" |> ignore ) ""
 
-    testCase "throws on 4 chars" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "2222" |> ignore ) ""
+        testCase "throws on 4 chars" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "2222" |> ignore ) ""
 
-    testCase "throws on 7 chars" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "2222222" |> ignore ) ""
+        testCase "throws on 7 chars" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "2222222" |> ignore ) ""
 
-    testCase "throws on 10 chars" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "2222222222" |> ignore ) ""
+        testCase "throws on 10 chars" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "2222222222" |> ignore ) ""
 
-    testCase "throws on 13 chars" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "2222222222222" |> ignore ) ""
+        testCase "throws on 13 chars" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "2222222222222" |> ignore ) ""
 
-    testCase "throws on 17 chars" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "22222222222222222" |> ignore ) ""
-  ]
+        testCase "throws on 17 chars" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base46.Default.Decode "22222222222222222" |> ignore ) ""
+    ]
 
 let Base64ExceptionTests =
-  testList "Base64ExceptionTests" [
-    testCase "invalid char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base64.Default.Decode "B'C" |> ignore ) ""
+    testList "Base64ExceptionTests" [
+        testCase "invalid char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base64.Default.Decode "B'C" |> ignore ) ""
 
-    testCase "control char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base64.Default.Decode "B\x1BC" |> ignore ) ""
+        testCase "control char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base64.Default.Decode "B\x1BC" |> ignore ) ""
 
-    testCase "high char outside range throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base64.Default.Decode "B±C" |> ignore ) ""
-  ]
+        testCase "high char outside range throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base64.Default.Decode "B±C" |> ignore ) ""
+    ]
 
 let Base91ExceptionTests =
-  testList "Base91ExceptionTests" [
-    testCase "invalid char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "B'C" |> ignore ) ""
+    testList "Base91ExceptionTests" [
+        testCase "invalid char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "B'C" |> ignore ) ""
 
-    testCase "control char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "B\x1BC" |> ignore ) ""
+        testCase "control char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "B\x1BC" |> ignore ) ""
 
-    testCase "high char outside range throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "B±C" |> ignore ) ""
+        testCase "high char outside range throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "B±C" |> ignore ) ""
 
-    testCase "throws on 1 char" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "!" |> ignore ) ""
+        testCase "throws on 1 char" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "!" |> ignore ) ""
 
-    testCase "throws on 6 chars" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "!!!!!!" |> ignore ) ""
+        testCase "throws on 6 chars" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "!!!!!!" |> ignore ) ""
 
-    testCase "throws on 11 chars" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "!!!!!!!!!!!" |> ignore ) ""
+        testCase "throws on 11 chars" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "!!!!!!!!!!!" |> ignore ) ""
 
-    testCase "throws on 17 chars" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "!!!!!!!!!!!!!!!!!" |> ignore ) ""
-  ]
+        testCase "throws on 17 chars" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base91.Default.Decode "!!!!!!!!!!!!!!!!!" |> ignore ) ""
+    ]
 
 let Base91LegacyExceptionTests =
-  testList "Base91LegacyExceptionTests" [
-    testCase "invalid char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base91Legacy.Default.Decode "B'C" |> ignore ) ""
+    testList "Base91LegacyExceptionTests" [
+        testCase "invalid char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base91Legacy.Default.Decode "B'C" |> ignore ) ""
 
-    testCase "control char throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base91Legacy.Default.Decode "B\x1BC" |> ignore ) ""
+        testCase "control char throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base91Legacy.Default.Decode "B\x1BC" |> ignore ) ""
 
-    testCase "high char outside range throws" <| fun () ->
-      Expect.throwsT< FormatException > ( fun () -> Base91Legacy.Default.Decode "B±C" |> ignore ) ""
-  ]
+        testCase "high char outside range throws" <| fun () ->
+            Expect.throwsT< FormatException > ( fun () -> Base91Legacy.Default.Decode "B±C" |> ignore ) ""
+    ]
 #endif
 
 let allTests = testList "All" [
-  Base16Tests
-  Base32Tests
-  Base46Tests
-  Base64Tests
-  Base91Tests
-  Base91LegacyTests
+    Base16Tests
+    Base32Tests
+    Base46Tests
+    Base64Tests
+    Base91Tests
+    Base91LegacyTests
 #if ! FABLE_COMPILER
-  Base16ExceptionTests
-  Base32ExceptionTests
-  Base46ExceptionTests
-  Base64ExceptionTests
-  Base91ExceptionTests
-  Base91LegacyExceptionTests
+    Base16ExceptionTests
+    Base32ExceptionTests
+    Base46ExceptionTests
+    Base64ExceptionTests
+    Base91ExceptionTests
+    Base91LegacyExceptionTests
 #endif
 ]

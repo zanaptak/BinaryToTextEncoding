@@ -9,10 +9,10 @@ open Expecto
 [<EntryPoint>]
 let main argv =
 
-  #if FABLE_COMPILER
-  Mocha.runTests Tests.allTests
-  #else
-  runTestsWithArgs defaultConfig argv Tests.allTests
-  #endif
+    #if FABLE_COMPILER
+    Mocha.runTests Tests.allTests
+    #else
+    runTestsWithArgs defaultConfig argv Tests.allTests
+    #endif
 
 
