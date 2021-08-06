@@ -8,76 +8,43 @@
 #   Invoke-Build ?  # this lists available tasks
 
 param (
-    $NuGetApiPushKey = ( property NuGetApiPushKey 'MISSING' ),
-    $LocalPackageDir = ( property LocalPackageDir 'C:\code\LocalPackages' )
+    $NuGetApiPushKey = ( property NuGetApiPushKey 'MISSING' ) ,
+    $LocalPackageDir = ( property LocalPackageDir 'C:/code/LocalPackages' ) ,
+    $Configuration = "Release"
 )
+
+[ System.Environment ]::CurrentDirectory = $BuildRoot
 
 $baseProjectName = "BinaryToTextEncoding"
 $basePackageName = "Zanaptak.$baseProjectName"
+$mainProjectFilePath = "src/$baseProjectName.fsproj"
 
-task . Build
-
-task Clean {
-    exec { dotnet clean .\src -c Release }
+function trimLeadingZero {
+    param ( $item )
+    $item = $item.TrimStart( '0' )
+    if ( $item -eq "" ) { "0" } else { $item }
 }
 
-task Build {
-    exec { dotnet build .\src -c Release }
+function combinePrefixSuffix {
+    param ( $prefix , $suffix )
+    "$prefix-$suffix".TrimEnd( '-' )
 }
 
-task TestJs {
-    Set-Location .\test
-    if ( -not ( Test-Path node_modules ) ) { exec { npm install } }
-    remove bld
-    exec { npm test }
-}
-
-task TestNet Clean, Build, {
-    Set-Location .\test
-    exec { dotnet run -c Release }
-}
-
-task Test TestJs, TestNet
-
-task Benchmark Clean, Build, {
-    Set-Location .\benchmark
-    exec { dotnet run -c Release }
-}
-
-task Pack Clean, Build, {
-    exec { dotnet pack .\src -c Release }
-}
-
-task PackInternal Clean, Build, GetVersion, {
-    $yearStart = Get-Date -Year ( ( Get-Date ).Year ) -Month 1 -Day 1 -Hour 0 -Minute 0 -Second 0 -Millisecond 0
-    $now = Get-Date
-    $buildSuffix = [ int ] ( ( $now - $yearStart ).TotalSeconds )
-    $internalVersion = "$Version.$buildSuffix"
-    exec { dotnet pack .\src -c Release -p:PackageVersion=$internalVersion }
-    $filename = "$basePackageName.$internalVersion.nupkg"
-    Copy-Item .\src\bin\Release\$filename $LocalPackageDir
-    Write-Build Green "Copied $filename to $LocalPackageDir"
-}
-
-function UpdateProjectFile(
-    [ string ] $Filename ,
-    [ string ] $XPath ,
-    [ string ] $Value
-) {
-
+function writeProjectFileProperty {
+    param ( $projectFile , $propertyName , $propertyValue )
     $xml = New-Object System.Xml.XmlDocument
     $xml.PreserveWhitespace = $true
-    $xml.Load( $Filename )
+    $xml.Load( $projectFile )
 
-    $node = $xml.SelectSingleNode( $XPath )
-    if ( -not ( $node ) ) { throw "xpath not found" }
-    $node.InnerText = $Value
+    $nodePath = '/Project/PropertyGroup/' + $propertyName
+    $node = $xml.SelectSingleNode( $nodePath )
+    $node.InnerText = $propertyValue
 
     $settings = New-Object System.Xml.XmlWriterSettings
     $settings.OmitXmlDeclaration = $true
     $settings.Encoding = New-Object System.Text.UTF8Encoding( $true )
 
-    $writer = [ System.Xml.XmlWriter ]::Create( $Filename , $settings )
+    $writer = [ System.Xml.XmlWriter ]::Create( $projectFile , $settings )
     try {
         $xml.Save( $writer )
     } finally {
@@ -85,46 +52,128 @@ function UpdateProjectFile(
     }
 }
 
-task IncrementMinor GetVersion, {
-    if ( $Version -match "^(\d+)\.(\d+)\.(\d+)$" ) {
-        $projectFile = "$BuildRoot\src\$baseProjectName.fsproj"
-        $major = $Matches[ 1 ]
-        $minor = $Matches[ 2 ]
-        $patch = $Matches[ 3 ]
-        $newMinor = ( [ int ] $minor ) + 1
-        $newVersion = "$major.$newMinor.0"
-        UpdateProjectFile $projectFile '/Project/PropertyGroup/Version' $newVersion
-        Write-Build Green "Updated version to $newVersion"
+function readProjectFileProperty {
+    param ( $projectFile , $propertyName )
+    $nodePath = '/Project/PropertyGroup/' + $propertyName
+    $propertyValue =
+        Select-Xml -Path $projectFile -XPath $nodePath |
+            Select-Object -First 1 |
+            & { process { $_.Node.InnerXml.Trim() } }
+    $propertyValue
+}
+
+function changelogTopVersionAndDate {
+
+    $topSectionVersion = ""
+    $topSectionDate = ""
+
+    foreach ( $line in ( Get-Content .\CHANGELOG.md ) ) {
+        $versionMatch = ( [ regex ] "^#+ (\d+(?:\.\d+){2,}(?:-\S+)?) \((\S+)\)" ).Match( $line )
+        if ( $versionMatch.Success ) {
+            $topSectionVersion , $topSectionDate = $versionMatch.Groups[ 1 ].Value , $versionMatch.Groups[ 2 ].Value
+            break
+        }
+    }
+
+    $topSectionVersion , $topSectionDate
+}
+
+task . Build
+
+task Clean {
+    exec { dotnet clean ./src -c $Configuration }
+}
+
+task Build {
+    exec { dotnet build ./src -c $Configuration }
+}
+
+task TestJs {
+    Set-Location ./test
+    if ( -not ( Test-Path node_modules ) ) { exec { npm install } }
+    remove bld
+    exec { npm test }
+}
+
+task TestNet Clean, Build, {
+    Set-Location ./test
+    exec { dotnet run -c $Configuration }
+}
+
+task Test TestJs, TestNet
+
+task Benchmark Clean, Build, {
+    Set-Location ./benchmark
+    exec { dotnet run -c $Configuration }
+}
+
+task IncrementMajor LoadVersion , {
+    $version = [ System.Version ] $VersionPrefix
+    $newVersionPrefix = [ System.Version ]::new( ( $version.Major + 1 ) , 0 , 0 ).ToString( 3 )
+    writeProjectFileProperty $mainProjectFilePath "VersionPrefix" $newVersionPrefix
+    writeProjectFileProperty $mainProjectFilePath "VersionSuffix" ""
+} , ReportProjectFileVersion
+
+task IncrementMinor LoadVersion , {
+    $version = [ System.Version ] $VersionPrefix
+    $newVersionPrefix = [ System.Version ]::new( $version.Major , ( $version.Minor + 1 ) , 0 ).ToString( 3 )
+    writeProjectFileProperty $mainProjectFilePath "VersionPrefix" $newVersionPrefix
+    writeProjectFileProperty $mainProjectFilePath "VersionSuffix" ""
+} , ReportProjectFileVersion
+
+task IncrementPatch LoadVersion , {
+    $version = [ System.Version ] $VersionPrefix
+    $newVersionPrefix = [ System.Version ]::new( $version.Major , $version.Minor , ( $version.Build + 1 ) ).ToString( 3 )
+    writeProjectFileProperty $mainProjectFilePath "VersionPrefix" $newVersionPrefix
+    writeProjectFileProperty $mainProjectFilePath "VersionSuffix" ""
+} , ReportProjectFileVersion
+
+task ReportProjectFileVersion {
+    $actualVersionPrefix = readProjectFileProperty $mainProjectFilePath "VersionPrefix"
+    $actualVersionSuffix = readProjectFileProperty $mainProjectFilePath "VersionSuffix"
+    $actualFullVersion = combinePrefixSuffix $actualVersionPrefix $actualVersionSuffix
+    Write-Build Green "Version: $actualFullVersion"
+}
+
+task LoadVersion {
+    $script:VersionPrefix = readProjectFileProperty $mainProjectFilePath "VersionPrefix"
+    $script:VersionSuffix = readProjectFileProperty $mainProjectFilePath "VersionSuffix"
+    $script:FullVersion = combinePrefixSuffix $VersionPrefix $VersionSuffix
+}
+
+task Pack {
+    $script:Configuration = "Release"
+} , Clean , {
+    exec { dotnet pack ./src -c $Configuration -p:ContinuousIntegrationBuild=true }
+}
+
+task PackInternal {
+    $script:Configuration = "Debug"
+} , Clean , LoadVersion , {
+    $yearStart = Get-Date -Year ( ( Get-Date ).Year ) -Month 1 -Day 1 -Hour 0 -Minute 0 -Second 0 -Millisecond 0
+    $now = Get-Date
+    $seconds = [ int ] ( $now - $yearStart ).TotalSeconds
+    if ( $VersionSuffix ) {
+        $internalVersionPrefix = $VersionPrefix
+        $internalVersionSuffix = "$VersionSuffix.$seconds"
     }
     else {
-        throw "invalid version: $Version"
+        $internalVersionPrefix = "$VersionPrefix.$seconds"
+        $internalVersionSuffix = $VersionSuffix
     }
+    exec { dotnet pack ./src -c $Configuration -p:VersionPrefix=$internalVersionPrefix -p:VersionSuffix=$internalVersionSuffix }
+    $internalFullVersion = combinePrefixSuffix $internalVersionPrefix $internalVersionSuffix
+    $filename = "$basePackageName.$internalFullVersion.*nupkg"
+    Copy-Item ./src/bin/$Configuration/$filename $LocalPackageDir
+    Write-Build Green "Copied $filename to $LocalPackageDir"
 }
 
-task IncrementPatch GetVersion, {
-    if ( $Version -match "^(\d+)\.(\d+)\.(\d+)$" ) {
-        $projectFile = "$BuildRoot\src\$baseProjectName.fsproj"
-        $major = $Matches[ 1 ]
-        $minor = $Matches[ 2 ]
-        $patch = $Matches[ 3 ]
-        $newPatch = ( [ int ] $patch ) + 1
-        $newVersion = "$major.$minor.$newPatch"
-        UpdateProjectFile $projectFile '/Project/PropertyGroup/Version' $newVersion
-        Write-Build Green "Updated version to $newVersion"
-    }
-    else {
-        throw "invalid version: $Version"
-    }
-}
-
-task GetVersion {
-    $script:Version = Select-Xml -Path ".\src\$baseProjectName.fsproj" -XPath /Project/PropertyGroup/Version | % { $_.Node.InnerXml.Trim() }
-}
-
-task UploadNuGet EnsureCommitted, GetVersion, {
+task UploadNuGet {
+    $script:Configuration = "Release"
+} , EnsureCommitted , LoadVersion , {
     if ( $NuGetApiPushKey -eq "MISSING" ) { throw "NuGet key not provided" }
-    Set-Location ./src/bin/Release
-    $filename = "$basePackageName.$Version.nupkg"
+    Set-Location ./src/bin/$Configuration
+    $filename = "$basePackageName.$FullVersion.nupkg"
     if ( -not ( Test-Path $filename ) ) { throw "nupkg file not found" }
     $lastHour = ( Get-Date ).AddHours( -1 )
     if ( ( Get-ChildItem $filename ).LastWriteTime -lt $lastHour ) { throw "nupkg file too old" }
@@ -135,3 +184,26 @@ task EnsureCommitted {
     $gitoutput = exec { git status -s -uall }
     if ( $gitoutput ) { throw "uncommitted changes exist in working directory" }
 }
+
+task UpdateProjectFromChangelog {
+    $version , $date = changelogTopVersionAndDate
+    if ( $version -match '-' ) {
+        $prefix , $suffix = $version -split '-'
+    }
+    else {
+        $prefix , $suffix = $version , ""
+    }
+
+    writeProjectFileProperty $mainProjectFilePath "VersionPrefix" $prefix
+    writeProjectFileProperty $mainProjectFilePath "VersionSuffix" $suffix
+
+    $anchor = ( $version -replace '\.','' ) + "-$date"
+    $url = "https://github.com/zanaptak/$baseProjectName/blob/main/CHANGELOG.md#$anchor"
+
+    writeProjectFileProperty $mainProjectFilePath "PackageReleaseNotes" $url
+
+    Write-Build Green "****"
+    Write-Build Green "**** Assumed changelog URL (VERIFY): $url"
+    Write-Build Green "****"
+
+} , ReportProjectFileVersion

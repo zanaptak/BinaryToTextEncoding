@@ -149,7 +149,7 @@ type Base64 private ( configuration : BinaryToTextConfiguration ) =
 
     static let defaultInstance = Base64( defaultCharacterSet )
 
-    /// Encodes a byte array into a Base64 string. Optionally wrap output at specified column; for efficiency, column must be a multiple of 4, will be rounded down if necessary. Throws exception on invalid input.
+    /// Encodes a byte array into a Base64 string. Optionally wrap output at specified column (will be rounded down to a multiple of 4 for implementation efficiency). Throws exception on invalid input.
     member this.Encode ( bytes : byte array , [< Optional ; DefaultParameterValue( 0 ) >] wrapAtColumn : int ) = encodeInternal configuration wrapAtColumn bytes
     /// Decodes a Base64 string into a byte array. Throws exception on invalid input.
     member this.Decode ( str : string ) = decodeInternal configuration str

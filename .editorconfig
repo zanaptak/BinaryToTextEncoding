@@ -7,6 +7,5 @@ indent_size = 4
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-[*.{sln,fsproj,csproj,vbproj}]
-charset = utf-8-bom
+[*.{sln,fsproj,csproj,vbproj,props,targets}]
 indent_size = 2

@@ -1,9 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
-    <Version>0.1.1</Version>
+    <VersionPrefix>0.1.1</VersionPrefix>
+    <VersionSuffix></VersionSuffix>
     <Authors>zanaptak</Authors>
     <AssemblyName>Zanaptak.BinaryToTextEncoding</AssemblyName>
     <Product>Zanaptak.BinaryToTextEncoding</Product>
@@ -11,14 +12,14 @@
     <RepositoryUrl>https://github.com/zanaptak/BinaryToTextEncoding.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/zanaptak/BinaryToTextEncoding</PackageProjectUrl>
-    <PackageReleaseNotes>https://github.com/zanaptak/BinaryToTextEncoding/releases</PackageReleaseNotes>
+    <PackageReleaseNotes>https://github.com/zanaptak/BinaryToTextEncoding/blob/main/CHANGELOG.md#011-2019-09-29</PackageReleaseNotes>
     <PackageTags>base16;base32;base46;base64;base91;.net;fable</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>A binary-to-text encoder/decoder library for .NET and Fable. Provides base 16, base 32, base 46, base 64, and base 91 codecs. Supports custom character sets.</Description>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -37,6 +38,7 @@
 
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="4.3.4" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>
