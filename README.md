@@ -95,7 +95,7 @@ To reduce complexity, this library does not support padding. Padding does not af
 
 This library provides two base 91 implementations: `Base91` and `Base91Legacy`. They are not compatible; the encoded output of one cannot be decoded by the other.
 
-The main `Base91` algorithm works like the other `BaseXX` algorithms in the library; it encodes in big-endian order and constant-width (each 2-character pair encodes exactly 13 bits). The default character set is in ASCII order to preserve sortability of input, and excludes the characters `"`, `'`, and `\` to make it more easily quotable in programming languages.
+The main `Base91` algorithm works like the other `BaseXX` algorithms in the library. It encodes with constant-width (each 2-character pair encodes exactly 13 bits) in big-endian order. The default character set is in ASCII order to preserve sortability of input, and excludes the characters `"`, `'`, and `\` to make it more easily quotable in programming languages.
 
 `Base91Legacy` is based on the previously existing [basE91](http://base91.sourceforge.net/) algorithm. It encodes with a variable-width mechanism (some 2-character pairs can encode 14 bits instead of 13) which can result in slightly smaller encoded strings. Each two-character pair in the output is swapped compared to the main algorithm (least-significant char of the pair first), so sorting by string is not meaningful regardless of character set. Its default character set includes the `"` character, making it inconvenient to use in some programming languages and data formats such as JSON.
 

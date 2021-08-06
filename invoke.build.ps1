@@ -42,7 +42,7 @@ function writeProjectFileProperty {
 
     $settings = New-Object System.Xml.XmlWriterSettings
     $settings.OmitXmlDeclaration = $true
-    $settings.Encoding = New-Object System.Text.UTF8Encoding( $true )
+    $settings.Encoding = New-Object System.Text.UTF8Encoding( $false )
 
     $writer = [ System.Xml.XmlWriter ]::Create( $projectFile , $settings )
     try {

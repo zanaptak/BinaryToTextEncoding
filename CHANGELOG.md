@@ -2,7 +2,7 @@
 
 [![GitHub](https://img.shields.io/badge/-github-gray?logo=github)](https://github.com/zanaptak/BinaryToTextEncoding) [![NuGet](https://img.shields.io/nuget/v/Zanaptak.BinaryToTextEncoding?logo=nuget)](https://www.nuget.org/packages/Zanaptak.BinaryToTextEncoding)
 
-## x.x.x (unreleased)
+## 1.0.0 (2021-08-06)
 
 - Enable Source Link
 - Enable deterministic build
