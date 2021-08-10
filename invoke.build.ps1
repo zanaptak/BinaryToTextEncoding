@@ -62,20 +62,22 @@ function readProjectFileProperty {
     $propertyValue
 }
 
-function changelogTopVersionAndDate {
+$changelogEntryRegex = '^#+ (\d+(?:\.\d+){2,}(?:-\S+)?) \((\d\d\d\d-\d\d-\d\d)\)'
 
-    $topSectionVersion = ""
-    $topSectionDate = ""
-
+function changelogTopEntry {
     foreach ( $line in ( Get-Content .\CHANGELOG.md ) ) {
-        $versionMatch = ( [ regex ] "^#+ (\d+(?:\.\d+){2,}(?:-\S+)?) \((\S+)\)" ).Match( $line )
-        if ( $versionMatch.Success ) {
-            $topSectionVersion , $topSectionDate = $versionMatch.Groups[ 1 ].Value , $versionMatch.Groups[ 2 ].Value
-            break
+        if ( $line -match $changelogEntryRegex ) {
+            return [ PSCustomObject ] @{ Version = $Matches.1 ; Date = $Matches.2 }
         }
     }
+}
 
-    $topSectionVersion , $topSectionDate
+function changelogHasUnversionedEntry {
+    foreach ( $line in ( Get-Content .\CHANGELOG.md ) ) {
+        if ( $line -imatch "^#+ .*Changelog" ) { continue } # skip Changelog header
+        if ( $line -match $changelogEntryRegex ) { return $false } # found version match first
+        if ( $line -match "^#" ) { return $true } # found unversioned entry line
+    }
 }
 
 task . Build
@@ -102,31 +104,12 @@ task TestNet Clean, Build, {
 
 task Test TestJs, TestNet
 
-task Benchmark Clean, Build, {
+task Benchmark {
+    $script:Configuration = "Release"
+} , Clean , Build , {
     Set-Location ./benchmark
     exec { dotnet run -c $Configuration }
 }
-
-task IncrementMajor LoadVersion , {
-    $version = [ System.Version ] $VersionPrefix
-    $newVersionPrefix = [ System.Version ]::new( ( $version.Major + 1 ) , 0 , 0 ).ToString( 3 )
-    writeProjectFileProperty $mainProjectFilePath "VersionPrefix" $newVersionPrefix
-    writeProjectFileProperty $mainProjectFilePath "VersionSuffix" ""
-} , ReportProjectFileVersion
-
-task IncrementMinor LoadVersion , {
-    $version = [ System.Version ] $VersionPrefix
-    $newVersionPrefix = [ System.Version ]::new( $version.Major , ( $version.Minor + 1 ) , 0 ).ToString( 3 )
-    writeProjectFileProperty $mainProjectFilePath "VersionPrefix" $newVersionPrefix
-    writeProjectFileProperty $mainProjectFilePath "VersionSuffix" ""
-} , ReportProjectFileVersion
-
-task IncrementPatch LoadVersion , {
-    $version = [ System.Version ] $VersionPrefix
-    $newVersionPrefix = [ System.Version ]::new( $version.Major , $version.Minor , ( $version.Build + 1 ) ).ToString( 3 )
-    writeProjectFileProperty $mainProjectFilePath "VersionPrefix" $newVersionPrefix
-    writeProjectFileProperty $mainProjectFilePath "VersionSuffix" ""
-} , ReportProjectFileVersion
 
 task ReportProjectFileVersion {
     $actualVersionPrefix = readProjectFileProperty $mainProjectFilePath "VersionPrefix"
@@ -150,16 +133,17 @@ task Pack {
 task PackInternal {
     $script:Configuration = "Debug"
 } , Clean , LoadVersion , {
-    $yearStart = Get-Date -Year ( ( Get-Date ).Year ) -Month 1 -Day 1 -Hour 0 -Minute 0 -Second 0 -Millisecond 0
-    $now = Get-Date
-    $seconds = [ int ] ( $now - $yearStart ).TotalSeconds
+    $timestamp = ( Get-Date ).ToString( "yyyyMMdd.HHmmssfff" )
     if ( $VersionSuffix ) {
         $internalVersionPrefix = $VersionPrefix
-        $internalVersionSuffix = "$VersionSuffix.$seconds"
+        $internalVersionSuffix = "$VersionSuffix.0.internal.$timestamp"
     }
     else {
-        $internalVersionPrefix = "$VersionPrefix.$seconds"
-        $internalVersionSuffix = $VersionSuffix
+        $parseVersion = [ System.Version ] $VersionPrefix
+        $newBuild = [ math ]::Max( $parseVersion.Build , 0 )
+        $newRevision = [ math ]::Max( $parseVersion.Revision , 0 ) + 1
+        $internalVersionPrefix = [ System.Version ]::new( $parseVersion.Major , $parseVersion.Minor , $newBuild , $newRevision ).ToString( 4 )
+        $internalVersionSuffix = "0.internal.$timestamp"
     }
     exec { dotnet pack ./src -c $Configuration -p:VersionPrefix=$internalVersionPrefix -p:VersionSuffix=$internalVersionSuffix }
     $internalFullVersion = combinePrefixSuffix $internalVersionPrefix $internalVersionSuffix
@@ -170,13 +154,13 @@ task PackInternal {
 
 task UploadNuGet {
     $script:Configuration = "Release"
-} , EnsureCommitted , LoadVersion , {
+} , EnsureCommitted , LoadVersion , EnsureChangelogApplied , {
     if ( $NuGetApiPushKey -eq "MISSING" ) { throw "NuGet key not provided" }
     Set-Location ./src/bin/$Configuration
     $filename = "$basePackageName.$FullVersion.nupkg"
     if ( -not ( Test-Path $filename ) ) { throw "nupkg file not found" }
     $lastHour = ( Get-Date ).AddHours( -1 )
-    if ( ( Get-ChildItem $filename ).LastWriteTime -lt $lastHour ) { throw "nupkg file too old" }
+    if ( ( Get-Item $filename ).LastWriteTime -lt $lastHour ) { throw "nupkg file too old" }
     exec { dotnet nuget push $filename -k $NuGetApiPushKey -s https://api.nuget.org/v3/index.json }
 }
 
@@ -185,19 +169,28 @@ task EnsureCommitted {
     if ( $gitoutput ) { throw "uncommitted changes exist in working directory" }
 }
 
+task EnsureChangelogApplied LoadVersion , {
+    if ( changelogHasUnversionedEntry ) { throw "unversioned entry exists in changelog" }
+    $changelog = changelogTopEntry
+    if ( $changelog.Version -ne $FullVersion ) { throw "mismatched project version ($FullVersion) and changelog version ($($changelog.Version))" }
+    if ( $changelog.Date -notmatch "^\d\d\d\d-\d\d-\d\d$" ) { throw "invalid changelog date ($($changelog.Date))" }
+}
+
 task UpdateProjectFromChangelog {
-    $version , $date = changelogTopVersionAndDate
-    if ( $version -match '-' ) {
-        $prefix , $suffix = $version -split '-'
+    $changelog = changelogTopEntry
+    if ( -not $changelog.Version ) { throw "no version found" }
+
+    if ( $changelog.Version -match '-' ) {
+        $prefix , $suffix = $changelog.Version -split '-'
     }
     else {
-        $prefix , $suffix = $version , ""
+        $prefix , $suffix = $changelog.Version , ""
     }
 
     writeProjectFileProperty $mainProjectFilePath "VersionPrefix" $prefix
     writeProjectFileProperty $mainProjectFilePath "VersionSuffix" $suffix
 
-    $anchor = ( $version -replace '\.','' ) + "-$date"
+    $anchor = ( $changelog.Version -replace '\.','' ) + "-$($changelog.Date)"
     $url = "https://github.com/zanaptak/$baseProjectName/blob/main/CHANGELOG.md#$anchor"
 
     writeProjectFileProperty $mainProjectFilePath "PackageReleaseNotes" $url
