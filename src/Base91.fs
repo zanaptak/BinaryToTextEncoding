@@ -185,18 +185,25 @@ open System.Runtime.InteropServices
 
 type Base91 private ( configuration : BinaryToTextConfiguration ) =
 
-    static let defaultInstance = Base91( defaultCharacterSet )
+    static let defaultInstance = lazy Base91( defaultCharacterSet )
 
     /// Encodes a byte array into a Base91 string. Optionally wrap output at specified column (will be rounded down to a multiple of 4 for implementation efficiency). Throws exception on invalid input.
-    member this.Encode ( bytes : byte array , [< Optional ; DefaultParameterValue( 0 ) >] wrapAtColumn : int ) = encodeInternal configuration wrapAtColumn bytes
+    #if ! FABLE_COMPILER
+    member this.Encode ( bytes : byte array , [< Optional ; DefaultParameterValue( defaultWrapAtColumn ) >] wrapAtColumn : int ) =
+        encodeInternal configuration wrapAtColumn bytes
+    #else
+    member this.Encode ( bytes : byte array , ?wrapAtColumn : int ) =
+        encodeInternal configuration ( defaultArg wrapAtColumn defaultWrapAtColumn ) bytes
+    #endif
     /// Decodes a Base91 string into a byte array. Throws exception on invalid input.
     member this.Decode ( str : string ) = decodeInternal configuration str
     /// Returns a configuration object describing the character set and newline setting used by this instance.
     member this.Configuration = configuration
 
     /// Provides a static Base91 encoder/decoder instance using the default options. 16 characters = 13 bytes; 1 character = 6.5 bits. (Note: Updated algorithm, incompatible with legacy `basE91` algorithm.)
-    static member Default = defaultInstance
-    /// Characters: !#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~
+    static member Default = defaultInstance.Value
+
+    /// (Default) Excludes " ' \ characters, ASCII-sortable: !#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~
     static member SortableQuotableCharacterSet = defaultCharacterSet
 
     /// <summary>Creates a Base91 encoder/decoder using the specified options. 16 characters = 13 bytes; 1 character = 6.5 bits. (Note: Updated algorithm, incompatible with legacy `basE91` algorithm.)</summary>
@@ -204,8 +211,17 @@ type Base91 private ( configuration : BinaryToTextConfiguration ) =
     /// Default: !#$%&amp;()*+,-./0123456789:;&lt;=&gt;?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~</param>
     /// <param name='useCrLfNewline'>Specifies whether to use CRLF (true) or LF (false) when encoding with the wrap option. Default: true</param>
     new
+        #if ! FABLE_COMPILER
         (
             [< Optional ; DefaultParameterValue( defaultCharacterSet ) >] characterSet : string
-            , [< Optional ; DefaultParameterValue( true ) >] useCrLfNewline : bool
+            , [< Optional ; DefaultParameterValue( defaultUseCrLfNewline ) >] useCrLfNewline : bool
         ) =
+        #else
+        (
+            ?characterSet : string
+            , ?useCrLfNewline : bool
+        ) =
+            let characterSet = defaultArg characterSet defaultCharacterSet
+            let useCrLfNewline = defaultArg useCrLfNewline defaultUseCrLfNewline
+        #endif
             Base91( BinaryToTextConfiguration ( 91 , characterSet , useCrLfNewline ) )

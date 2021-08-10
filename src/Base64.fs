@@ -147,29 +147,49 @@ open System.Runtime.InteropServices
 
 type Base64 private ( configuration : BinaryToTextConfiguration ) =
 
-    static let defaultInstance = Base64( defaultCharacterSet )
+    static let defaultInstance = lazy Base64( defaultCharacterSet )
 
     /// Encodes a byte array into a Base64 string. Optionally wrap output at specified column (will be rounded down to a multiple of 4 for implementation efficiency). Throws exception on invalid input.
-    member this.Encode ( bytes : byte array , [< Optional ; DefaultParameterValue( 0 ) >] wrapAtColumn : int ) = encodeInternal configuration wrapAtColumn bytes
+    #if ! FABLE_COMPILER
+    member this.Encode ( bytes : byte array , [< Optional ; DefaultParameterValue( defaultWrapAtColumn ) >] wrapAtColumn : int ) =
+        encodeInternal configuration wrapAtColumn bytes
+    #else
+    member this.Encode ( bytes : byte array , ?wrapAtColumn : int ) =
+        encodeInternal configuration ( defaultArg wrapAtColumn defaultWrapAtColumn ) bytes
+    #endif
     /// Decodes a Base64 string into a byte array. Throws exception on invalid input.
     member this.Decode ( str : string ) = decodeInternal configuration str
     /// Returns a configuration object describing the character set and newline setting used by this instance.
     member this.Configuration = configuration
 
     /// Provides a static Base64 encoder/decoder instance using the default options. 4 characters = 3 bytes; 1 character = 6 bits. (Note: Does not support padding; must be trimmed before calling decoder.)
-    static member Default = defaultInstance
-    /// Characters: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/
+    static member Default = defaultInstance.Value
+
+    /// (Default) RFC 4648 section 4: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/
     static member StandardCharacterSet = defaultCharacterSet
-    /// Characters: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_
+
+    /// RFC 4648 section 5: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_
     static member UrlSafeCharacterSet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+    /// Unix crypt password hashes, ASCII-sortable: ./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+    static member UnixCryptCharacterSet = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
     /// <summary>Creates a Base64 encoder/decoder using the specified options. 4 characters = 3 bytes; 1 character = 6 bits. (Note: Does not support padding; must be trimmed before calling decoder.)</summary>
     /// <param name='characterSet'>A 64-character string. Characters must be in the range U+0021 to U+007E.
     /// Default: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/</param>
     /// <param name='useCrLfNewline'>Specifies whether to use CRLF (true) or LF (false) when encoding with the wrap option. Default: true</param>
     new
+        #if ! FABLE_COMPILER
         (
             [< Optional ; DefaultParameterValue( defaultCharacterSet ) >] characterSet : string
-            , [< Optional ; DefaultParameterValue( true ) >] useCrLfNewline : bool
+            , [< Optional ; DefaultParameterValue( defaultUseCrLfNewline ) >] useCrLfNewline : bool
         ) =
+        #else
+        (
+            ?characterSet : string
+            , ?useCrLfNewline : bool
+        ) =
+            let characterSet = defaultArg characterSet defaultCharacterSet
+            let useCrLfNewline = defaultArg useCrLfNewline defaultUseCrLfNewline
+        #endif
             Base64( BinaryToTextConfiguration ( 64 , characterSet , useCrLfNewline ) )

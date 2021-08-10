@@ -28,8 +28,6 @@ let testRandomMultiple encodeFn decodeFn lower upper count =
         Expect.equal dec bytes ( sprintf "failed with seed %i on index %i" seed i )
 
 let Base16Tests =
-    let base16ConsonantsCharacterSet = "BCDFHJKMNPQRSTXZ"
-
     testList "Base16" [
         testCase "encode empty" <| fun () ->
             Expect.equal ( Base16.Default.Encode [||] ) "" ""
@@ -44,16 +42,16 @@ let Base16Tests =
             Expect.equal ( Base16.Default.Decode "00FF00FF00FF00FF" ) bytes ""
 
         testCase "encode consonants" <| fun () ->
-            Expect.equal ( Base16( base16ConsonantsCharacterSet ).Encode bytes ) "BBZZBBZZBBZZBBZZ" ""
+            Expect.equal ( Base16( Base16.ConsonantsCharacterSet ).Encode bytes ) "BBZZBBZZBBZZBBZZ" ""
 
         testCase "decode consonants" <| fun () ->
-            Expect.equal ( Base16( base16ConsonantsCharacterSet ).Decode "BBZZBBZZBBZZBBZZ" ) bytes ""
+            Expect.equal ( Base16( Base16.ConsonantsCharacterSet ).Decode "BBZZBBZZBBZZBBZZ" ) bytes ""
 
         testCase "round trip default" <| fun () ->
             testRandomMultiple Base16.Default.Encode Base16.Default.Decode 0 99 999
 
         testCase "round trip consonants" <| fun () ->
-            let codec = Base16( base16ConsonantsCharacterSet )
+            let codec = Base16( Base16.ConsonantsCharacterSet )
             testRandomMultiple codec.Encode codec.Decode 0 99 999
 
         testCase "encode wrap crlf default" <| fun () ->
@@ -64,8 +62,6 @@ let Base16Tests =
     ]
 
 let Base32Tests =
-    let base32ConsonantsCharSet = "BCDFHJKMNPQRSTXZbcdfhjkmnpqrstxz"
-
     testList "Base32" [
         testCase "encode empty" <| fun () ->
             Expect.equal ( Base32.Default.Encode [||] ) "" ""
@@ -80,16 +76,16 @@ let Base32Tests =
             Expect.equal ( Base32.Default.Decode "AD7QB7YA74AP6" ) bytes ""
 
         testCase "encode consonants" <| fun () ->
-            Expect.equal ( Base32( base32ConsonantsCharSet ).Encode bytes ) "BFzbCznBzsBZx" ""
+            Expect.equal ( Base32( Base32.ConsonantsCharacterSet ).Encode bytes ) "BFzbCznBzsBZx" ""
 
         testCase "decode consonants" <| fun () ->
-            Expect.equal ( Base32( base32ConsonantsCharSet ).Decode "BFzbCznBzsBZx" ) bytes ""
+            Expect.equal ( Base32( Base32.ConsonantsCharacterSet ).Decode "BFzbCznBzsBZx" ) bytes ""
 
         testCase "round trip default" <| fun () ->
             testRandomMultiple Base32.Default.Encode Base32.Default.Decode 0 99 999
 
         testCase "round trip consonants" <| fun () ->
-            let codec = Base32( base32ConsonantsCharSet )
+            let codec = Base32( Base32.ConsonantsCharacterSet )
             testRandomMultiple codec.Encode codec.Decode 0 99 999
 
         testCase "encode wrap crlf default" <| fun () ->
@@ -100,8 +96,6 @@ let Base32Tests =
     ]
 
 let Base46Tests =
-    let base46LettersCharSet = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz"
-
     testList "Base46" [
         testCase "encode empty" <| fun () ->
             Expect.equal ( Base46.Default.Encode [||] ) "" ""
@@ -116,16 +110,16 @@ let Base46Tests =
             Expect.equal ( Base46.Default.Decode "2CxBH62NvmWD" ) bytes ""
 
         testCase "encode letters" <| fun () ->
-            Expect.equal ( Base46( base46LettersCharSet ).Encode bytes ) "AHxGNEASvnZJ" ""
+            Expect.equal ( Base46( Base46.LettersCharacterSet ).Encode bytes ) "AHxGNEASvnZJ" ""
 
         testCase "decode letters" <| fun () ->
-            Expect.equal ( Base46( base46LettersCharSet ).Decode "AHxGNEASvnZJ" ) bytes ""
+            Expect.equal ( Base46( Base46.LettersCharacterSet ).Decode "AHxGNEASvnZJ" ) bytes ""
 
         testCase "round trip default" <| fun () ->
             testRandomMultiple Base46.Default.Encode Base46.Default.Decode 0 99 999
 
         testCase "round trip letters" <| fun () ->
-            let codec = Base46( base46LettersCharSet )
+            let codec = Base46( Base46.LettersCharacterSet )
             testRandomMultiple codec.Encode codec.Decode 0 99 999
 
         testCase "encode wrap crlf default" <| fun () ->
@@ -146,7 +140,6 @@ let Base46Tests =
     ]
 
 let Base64Tests =
-
     testList "Base64" [
         testCase "encode empty" <| fun () ->
             Expect.equal ( Base64.Default.Encode [||] ) "" ""

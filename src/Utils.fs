@@ -23,6 +23,8 @@ module internal Utils =
 
     let [< Literal >] InvalidDecode = -1
     let [< Literal >] Int32MaxAsFloat = 2147483647.
+    let [< Literal >] defaultUseCrLfNewline = true
+    let [< Literal >] defaultWrapAtColumn = 0
 
 open Utils
 

@@ -185,27 +185,46 @@ open System.Runtime.InteropServices
 
 type Base46 private ( configuration : BinaryToTextConfiguration ) =
 
-    static let defaultInstance = Base46( defaultCharacterSet )
+    static let defaultInstance = lazy Base46( defaultCharacterSet )
 
     /// Encodes a byte array into a Base46 string. Optionally wrap output at specified column (will be rounded down to a multiple of 4 for implementation efficiency). Throws exception on invalid input.
-    member this.Encode ( bytes : byte array , [< Optional ; DefaultParameterValue( 0 ) >] wrapAtColumn : int ) = encodeInternal configuration wrapAtColumn bytes
+    #if ! FABLE_COMPILER
+    member this.Encode ( bytes : byte array , [< Optional ; DefaultParameterValue( defaultWrapAtColumn ) >] wrapAtColumn : int ) =
+        encodeInternal configuration wrapAtColumn bytes
+    #else
+    member this.Encode ( bytes : byte array , ?wrapAtColumn : int ) =
+        encodeInternal configuration ( defaultArg wrapAtColumn defaultWrapAtColumn ) bytes
+    #endif
     /// Decodes a Base46 string into a byte array. Throws exception on invalid input.
     member this.Decode ( str : string ) = decodeInternal configuration str
     /// Returns a configuration object describing the character set and newline setting used by this instance.
     member this.Configuration = configuration
 
     /// Provides a static Base46 encoder/decoder instance using the default options. 16 characters = 11 bytes; 1 character = 5.5 bits.
-    static member Default = defaultInstance
-    /// Characters: 234567BCDFGHJKMNPQRSTVWXYZbcdfghjkmnpqrstvwxyz
+    static member Default = defaultInstance.Value
+
+    /// (Default) Excludes vowels and some confusable characters, ASCII-sortable: 234567BCDFGHJKMNPQRSTVWXYZbcdfghjkmnpqrstvwxyz
     static member SortableCharacterSet = defaultCharacterSet
+
+    /// Excludes numbers and some confusable letters, ASCII-sortable: ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz
+    static member LettersCharacterSet = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz"
 
     /// <summary>Creates a Base46 encoder/decoder using the specified options. 16 characters = 11 bytes; 1 character = 5.5 bits.</summary>
     /// <param name='characterSet'>A 46-character string. Characters must be in the range U+0021 to U+007E.
     /// Default: 234567BCDFGHJKMNPQRSTVWXYZbcdfghjkmnpqrstvwxyz</param>
     /// <param name='useCrLfNewline'>Specifies whether to use CRLF (true) or LF (false) when encoding with the wrap option. Default: true</param>
     new
+        #if ! FABLE_COMPILER
         (
             [< Optional ; DefaultParameterValue( defaultCharacterSet ) >] characterSet : string
-            , [< Optional ; DefaultParameterValue( true ) >] useCrLfNewline : bool
+            , [< Optional ; DefaultParameterValue( defaultUseCrLfNewline ) >] useCrLfNewline : bool
         ) =
+        #else
+        (
+            ?characterSet : string
+            , ?useCrLfNewline : bool
+        ) =
+            let characterSet = defaultArg characterSet defaultCharacterSet
+            let useCrLfNewline = defaultArg useCrLfNewline defaultUseCrLfNewline
+        #endif
             Base46( BinaryToTextConfiguration ( 46 , characterSet , useCrLfNewline ) )

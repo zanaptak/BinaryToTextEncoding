@@ -9,8 +9,6 @@
     <AssemblyName>Zanaptak.BinaryToTextEncoding</AssemblyName>
     <Product>Zanaptak.BinaryToTextEncoding</Product>
     <PackageId>Zanaptak.BinaryToTextEncoding</PackageId>
-    <RepositoryUrl>https://github.com/zanaptak/BinaryToTextEncoding.git</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/zanaptak/BinaryToTextEncoding</PackageProjectUrl>
     <PackageReleaseNotes>https://github.com/zanaptak/BinaryToTextEncoding/blob/main/CHANGELOG.md#100-2021-08-06</PackageReleaseNotes>
     <PackageTags>base16;base32;base46;base64;base91;.net;fable</PackageTags>
@@ -20,6 +18,11 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Configurations>Debug;Release;Fable</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Fable'">
+    <DefineConstants>FABLE_COMPILER</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

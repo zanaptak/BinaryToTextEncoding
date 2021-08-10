@@ -17,11 +17,14 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Fable|Any CPU = Fable|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{B01382CA-436B-40B7-B347-337D93EC988E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B01382CA-436B-40B7-B347-337D93EC988E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B01382CA-436B-40B7-B347-337D93EC988E}.Fable|Any CPU.ActiveCfg = Fable|Any CPU
+		{B01382CA-436B-40B7-B347-337D93EC988E}.Fable|Any CPU.Build.0 = Fable|Any CPU
 		{B01382CA-436B-40B7-B347-337D93EC988E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B01382CA-436B-40B7-B347-337D93EC988E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
