@@ -7,7 +7,6 @@
         "test": "mocha bld -t 10000"
     },
     "dependencies": {
-        "@babel/core": "^7.12.3",
         "fable-compiler": "^2.13.0",
         "fable-splitter": "^2.2.1",
         "mocha": "^8.2.1"
