@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Expecto" Version="8.11.0" />
-    <PackageReference Include="Fable.Mocha" Version="2.6.0" />
+    <PackageReference Include="Expecto" Version="8.13.2" />
+    <PackageReference Include="Fable.Mocha" Version="2.10.0" />
   </ItemGroup>
 
   <ItemGroup>

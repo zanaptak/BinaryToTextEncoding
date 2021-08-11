@@ -1,14 +1,11 @@
 {
     "private": true,
+    "type": "module",
     "scripts": {
-        "build": "fable-splitter ../src/BinaryToTextEncoding.fsproj -o bld --commonjs",
-        "testApp": "node bld/Program.js",
-        "pretest": "fable-splitter BinaryToTextEncoding.Tests.fsproj -o bld --commonjs",
-        "test": "mocha bld -t 10000"
+        "clean": "dotnet fable clean --outDir bld --yes",
+        "test": "dotnet fable --outDir bld --run mocha bld -t 10000"
     },
     "dependencies": {
-        "fable-compiler": "^2.13.0",
-        "fable-splitter": "^2.2.1",
-        "mocha": "^8.2.1"
+        "mocha": "^9.0.3"
     }
 }
