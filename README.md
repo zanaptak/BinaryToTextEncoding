@@ -117,11 +117,11 @@ UnixCryptCharacterSet | Unix crypt password hashes, ASCII-sortable | ```./012345
 
 Base91 | Description | Characters
 :--- | :--- | :---
-SortableQuotableCharacterSet | (Default) Excludes " ' \\ characters, ASCII-sortable | ```!#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~```
+SortableQuotableCharacterSet | (Default) Excludes " ' \\ characters, ASCII-sortable | ```!#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{\|}~```
 
 Base91Legacy | Description | Characters
 :--- | :--- | :---
-LegacyCharacterSet | (Default) Original 'basE91' character set | ```ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,./:;<=>?@[]^_`{|}~"```
+LegacyCharacterSet | (Default) Original 'basE91' character set | ```ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,./:;<=>?@[]^_`{\|}~"```
 
 ## Legacy basE91 compatibility
 
