@@ -123,7 +123,7 @@ Base91Legacy | Description | Characters
 :--- | :--- | :---
 LegacyCharacterSet | (Default) Original 'basE91' character set | ```ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,./:;<=>?@[]^_`{\|}~"```
 
-## Legacy basE91 compatibility
+## Legacy 'basE91' compatibility
 
 This library provides two base 91 implementations: `Base91` and `Base91Legacy`. They are not compatible; the encoded output of one cannot be decoded by the other.
 
