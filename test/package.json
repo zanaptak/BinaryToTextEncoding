@@ -6,6 +6,6 @@
         "test": "dotnet fable --outDir bld --run mocha bld -t 10000"
     },
     "dependencies": {
-        "mocha": "^9.0.3"
+        "mocha": "^10.2.0"
     }
 }
