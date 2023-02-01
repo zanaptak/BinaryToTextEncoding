@@ -2,7 +2,7 @@
 
 [![GitHub](https://img.shields.io/badge/-github-gray?logo=github)](https://github.com/zanaptak/BinaryToTextEncoding) [![NuGet](https://img.shields.io/nuget/v/Zanaptak.BinaryToTextEncoding?logo=nuget)](https://www.nuget.org/packages/Zanaptak.BinaryToTextEncoding)
 
-A binary-to-text encoder/decoder library for .NET and Fable. Provides base 16, base 32, base 46, base 64, and base 91 codecs. Supports custom character sets.
+A binary-to-text encoder/decoder library for [.NET](https://dotnet.microsoft.com/) and [Fable](https://fable.io/). Provides base 16, base 32, base 46, base 64, and base 91 codecs. Supports custom character sets.
 
 ## Output example
 
@@ -95,33 +95,33 @@ printfn "%s" (Base91.Default.Encode(randomBytes, 48))
 
 Base16 | Description | Characters
 :--- | :--- | :---
-StandardCharacterSet | (Default) Standard hexadecimal notation, ASCII-sortable | ```0123456789ABCDEF```
-ConsonantsCharacterSet | Excludes numbers, vowels, and some confusable letters, ASCII-sortable | ```BCDFHJKMNPQRSTXZ```
+StandardCharacterSet | (Default) Standard hexadecimal notation, ASCII-sortable | `0123456789ABCDEF`
+ConsonantsCharacterSet | Excludes numbers, vowels, and some confusable letters, ASCII-sortable | `BCDFHJKMNPQRSTXZ`
 
 Base32 | Description | Characters
 :--- | :--- | :---
-StandardCharacterSet | (Default) RFC 4648 section 6 | ```ABCDEFGHIJKLMNOPQRSTUVWXYZ234567```
-HexExtendedCharacterSet | RFC 4648 section 7, ASCII-sortable | ```0123456789ABCDEFGHIJKLMNOPQRSTUV```
-ConsonantsCharacterSet | Excludes numbers, vowels, and some confusable letters, ASCII-sortable | ```BCDFHJKMNPQRSTXZbcdfhjkmnpqrstxz```
+StandardCharacterSet | (Default) RFC 4648 section 6 | `ABCDEFGHIJKLMNOPQRSTUVWXYZ234567`
+HexExtendedCharacterSet | RFC 4648 section 7, ASCII-sortable | `0123456789ABCDEFGHIJKLMNOPQRSTUV`
+ConsonantsCharacterSet | Excludes numbers, vowels, and some confusable letters, ASCII-sortable | `BCDFHJKMNPQRSTXZbcdfhjkmnpqrstxz`
 
 Base46 | Description | Characters
 :--- | :--- | :---
-SortableCharacterSet | (Default) Excludes vowels and some confusable characters, ASCII-sortable | ```234567BCDFGHJKMNPQRSTVWXYZbcdfghjkmnpqrstvwxyz```
-LettersCharacterSet | Excludes numbers and some confusable letters, ASCII-sortable | ```ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz```
+SortableCharacterSet | (Default) Excludes vowels and some confusable characters, ASCII-sortable | `234567BCDFGHJKMNPQRSTVW` <br /> `XYZbcdfghjkmnpqrstvwxyz`
+LettersCharacterSet | Excludes numbers and some confusable letters, ASCII-sortable | `ABCDEFGHJKMNPQRSTUVWXYZ` <br /> `abcdefghjkmnpqrstuvwxyz`
 
 Base64 | Description | Characters
 :--- | :--- | :---
-StandardCharacterSet | (Default) RFC 4648 section 4 | ```ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/```
-UrlSafeCharacterSet | RFC 4648 section 5 | ```ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_```
-UnixCryptCharacterSet | Unix crypt password hashes, ASCII-sortable | ```./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz```
+StandardCharacterSet | (Default) RFC 4648 section 4 | `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef` <br /> `ghijklmnopqrstuvwxyz0123456789+/`
+UrlSafeCharacterSet | RFC 4648 section 5 | `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef` <br /> `ghijklmnopqrstuvwxyz0123456789-_`
+UnixCryptCharacterSet | Unix crypt password hashes, ASCII-sortable | `./0123456789ABCDEFGHIJKLMNOPQRST` <br /> `UVWXYZabcdefghijklmnopqrstuvwxyz`
 
 Base91 | Description | Characters
 :--- | :--- | :---
-SortableQuotableCharacterSet | (Default) Excludes " ' \\ characters, ASCII-sortable | ```!#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{\|}~```
+SortableQuotableCharacterSet | (Default) Excludes `"` `'` `\` characters, ASCII-sortable | ```!#$%&()*+,-./0123456789:;<=>?@A``` <br /> ```BCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`a``` <br /> ```bcdefghijklmnopqrstuvwxyz{\|}~``` <!-- github needs backslash for pipe -->
 
 Base91Legacy | Description | Characters
 :--- | :--- | :---
-LegacyCharacterSet | (Default) Original 'basE91' character set | ```ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&()*+,./:;<=>?@[]^_`{\|}~"```
+LegacyCharacterSet | (Default) Original 'basE91' character set | ```ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef``` <br /> ```ghijklmnopqrstuvwxyz0123456789!#``` <br /> ```$%&()*+,./:;<=>?@[]^_`{\|}~"``` <!-- github needs backslash for pipe -->
 
 ## Legacy 'basE91' compatibility
 

@@ -102,7 +102,7 @@ task TestNet Clean, Build, {
     exec { dotnet run -c $Configuration }
 }
 
-task Test TestJs, TestNet
+task Test TestNet , TestJs
 
 task Benchmark {
     $script:Configuration = "Release"
@@ -133,7 +133,8 @@ task Pack {
 task PackInternal {
     $script:Configuration = "Debug"
 } , Clean , LoadVersion , {
-    $timestamp = ( Get-Date ).ToString( "yyyyMMdd.HHmmssfff" )
+    $day , $time = ( Get-Date ).ToString( "yyyyMMdd-HHmmssfff" ) -split '-'
+    $timestamp = "$day.$( trimLeadingZero $time )"
     if ( $VersionSuffix ) {
         $internalVersionPrefix = $VersionPrefix
         $internalVersionSuffix = "$VersionSuffix.0.internal.$timestamp"

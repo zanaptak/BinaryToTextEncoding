@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Expecto" Version="8.13.2" />
-    <PackageReference Include="Fable.Mocha" Version="2.10.0" />
+    <PackageReference Include="Expecto" Version="9.0.4" />
+    <PackageReference Include="Fable.Mocha" Version="2.15.0" />
   </ItemGroup>
 
   <ItemGroup>
