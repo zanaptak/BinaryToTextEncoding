@@ -21,14 +21,34 @@ module internal Utils =
     let inline isCharWhitespace charCode =
         charCode = 0xA || charCode = 0xD || charCode = 0x9 || charCode = 0x20
 
+    let inline isCharLowercase charCode =
+        charCode >= 0x61 && charCode <= 0x7a
+
+    let inline isCharUppercase charCode =
+        charCode >= 0x41 && charCode <= 0x5a
+
+    let inline toLowercase charCode =
+        if isCharUppercase charCode then charCode + 32 else charCode
+
+    let inline toUppercase charCode =
+        if isCharLowercase charCode then charCode - 32 else charCode
+
+    let hasRepeatLetters characters =
+        let distinctIgnoringCase =
+            characters
+            |> Array.map( fun c -> toLowercase( int c ) )
+            |> Array.distinct
+        distinctIgnoringCase.Length <> characters.Length
+
     let [< Literal >] InvalidDecode = -1
     let [< Literal >] Int32MaxAsFloat = 2147483647.
     let [< Literal >] defaultUseCrLfNewline = true
+    let [< Literal >] defaultForceCaseSensitive = false
     let [< Literal >] defaultWrapAtColumn = 0
 
 open Utils
 
-type BinaryToTextConfiguration internal ( charCount , characterSet : string , useCrLfNewline ) =
+type BinaryToTextConfiguration internal ( charCount , characterSet : string , useCrLfNewline , forceCaseSensitive ) =
     do if String.IsNullOrWhiteSpace characterSet then raise ( System.ArgumentNullException( "characterSet" ) )
 
     let valueToChar =
@@ -36,6 +56,8 @@ type BinaryToTextConfiguration internal ( charCount , characterSet : string , us
         |> Seq.filter ( fun c -> isCharInsideRange ( int c ) )
         |> Seq.distinct
         |> Seq.toArray
+
+    let isCaseSensitive = forceCaseSensitive || hasRepeatLetters valueToChar
 
     do
         if valueToChar.Length <> charCount then
@@ -45,7 +67,17 @@ type BinaryToTextConfiguration internal ( charCount , characterSet : string , us
     let characterSet = String valueToChar
     let charCodeToValue = Array.replicate 0x7F InvalidDecode
 
-    do valueToChar |> Array.iteri ( fun i c -> charCodeToValue.[ int c ] <- i )
+    do
+        valueToChar
+        |> Array.iteri ( fun i c ->
+            if isCaseSensitive then
+                // Set value for specified character only
+                charCodeToValue.[ int c ] <- i
+            else
+                // Set value for both uppercase and lowercase (if non-letter, will just set same index twice)
+                charCodeToValue.[ toUppercase( int c ) ] <- i
+                charCodeToValue.[ toLowercase( int c ) ] <- i
+        )
 
     let newline = if useCrLfNewline then [| '\r' ; '\n' |] else [| '\n' |]
 
@@ -54,3 +86,4 @@ type BinaryToTextConfiguration internal ( charCount , characterSet : string , us
     member internal this.Newline = newline
     member this.CharacterSet = characterSet
     member this.UseCrLfNewline = useCrLfNewline
+    member this.IsCaseSensitive = isCaseSensitive

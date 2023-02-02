@@ -169,13 +169,8 @@ type Base91Legacy private ( configuration : BinaryToTextConfiguration ) =
     static let defaultInstance = lazy Base91Legacy( defaultCharacterSet )
 
     /// Encodes a byte array into a legacy `basE91` string. Optionally wrap output at specified column (will be rounded down to a multiple of 4 for implementation efficiency). Throws exception on invalid input.
-    #if ! FABLE_COMPILER
     member this.Encode ( bytes : byte array , [< Optional ; DefaultParameterValue( defaultWrapAtColumn ) >] wrapAtColumn : int ) =
         encodeInternal configuration wrapAtColumn bytes
-    #else
-    member this.Encode ( bytes : byte array , ?wrapAtColumn : int ) =
-        encodeInternal configuration ( defaultArg wrapAtColumn defaultWrapAtColumn ) bytes
-    #endif
     /// Decodes a legacy `basE91` string into a byte array. Throws exception on invalid input.
     member this.Decode ( str : string ) = decodeInternal configuration str
     /// Returns a configuration object describing the character set and newline setting used by this instance.
@@ -192,17 +187,8 @@ type Base91Legacy private ( configuration : BinaryToTextConfiguration ) =
     /// Default: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&amp;()*+,./:;&lt;=&gt;?@[]^_`{|}~&quot;</param>
     /// <param name='useCrLfNewline'>Specifies whether to use CRLF (true) or LF (false) when encoding with the wrap option. Default: true</param>
     new
-        #if ! FABLE_COMPILER
         (
             [< Optional ; DefaultParameterValue( defaultCharacterSet ) >] characterSet : string
             , [< Optional ; DefaultParameterValue( defaultUseCrLfNewline ) >] useCrLfNewline : bool
         ) =
-        #else
-        (
-            ?characterSet : string
-            , ?useCrLfNewline : bool
-        ) =
-            let characterSet = defaultArg characterSet defaultCharacterSet
-            let useCrLfNewline = defaultArg useCrLfNewline defaultUseCrLfNewline
-        #endif
-            Base91Legacy( BinaryToTextConfiguration ( 91 , characterSet , useCrLfNewline ) )
+            Base91Legacy( BinaryToTextConfiguration ( 91 , characterSet , useCrLfNewline , true ) )
