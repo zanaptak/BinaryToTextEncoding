@@ -55,6 +55,12 @@ module private Base91Utils =
             // Offset used instead of bitcount to avoid extra subtraction operation when calculating bit shifts.
             let mutable fullChunkBitOffset = -13
 
+            let inline wrapIfNeeded() =
+                if wrapAtCol > 0 && colIndex >= wrapAtCol then
+                    Array.Copy( configuration.Newline , 0 , outChars , charIndex , configuration.Newline.Length )
+                    charIndex <- charIndex + configuration.Newline.Length
+                    colIndex <- 0
+
             // Add each byte on right side of buffer, shifting previous bits left.
             // Encode leftmost bits of buffer when enough exist for a character chunk.
             for byte in bytes do
@@ -62,10 +68,7 @@ module private Base91Utils =
                 fullChunkBitOffset <- fullChunkBitOffset + 8
                 // Encode 13-bit chunk into 2 chars
                 if fullChunkBitOffset >= 0 then
-                    if wrapAtCol > 0 && colIndex >= wrapAtCol then
-                        Array.Copy( configuration.Newline , 0 , outChars , charIndex , configuration.Newline.Length )
-                        charIndex <- charIndex + configuration.Newline.Length
-                        colIndex <- 0
+                    wrapIfNeeded()
                     let bitValue = bitBuffer >>> fullChunkBitOffset &&& 0b1_1111_1111_1111
                     let hiCharVal = bitValue * Reciprocal91Shift24 >>> 24
                     outChars.[ charIndex ] <- configuration.ValueToChar.[ hiCharVal ]
@@ -78,32 +81,33 @@ module private Base91Utils =
             let remainingBitCount = fullChunkBitOffset + 13
             if remainingBitCount >= 7 then
                 // 2 chars for 7-13 bits (shift left and mask to encode as big endian)
-                if wrapAtCol > 0 && colIndex >= wrapAtCol then
-                    Array.Copy( configuration.Newline , 0 , outChars , charIndex , configuration.Newline.Length )
-                    charIndex <- charIndex + configuration.Newline.Length
+                wrapIfNeeded()
                 let bitValue = bitBuffer <<< ( 13 - remainingBitCount ) &&& 0b1_1111_1111_1111
                 let hiCharVal = bitValue * Reciprocal91Shift24 >>> 24
                 outChars.[ charIndex ] <- configuration.ValueToChar.[ hiCharVal ]
                 outChars.[ charIndex + 1 ] <- configuration.ValueToChar.[ bitValue - ( hiCharVal * 91 ) ]
+                charIndex <- charIndex + 2
+                colIndex <- colIndex + 2
             elif remainingBitCount > 0 then
                 // 1 char for 1-6 bits (shift left and mask to encode as big endian)
-                if wrapAtCol > 0 && colIndex >= wrapAtCol then
-                    Array.Copy( configuration.Newline , 0 , outChars , charIndex , configuration.Newline.Length )
-                    charIndex <- charIndex + configuration.Newline.Length
+                wrapIfNeeded()
                 let bitValue = bitBuffer <<< ( 6 - remainingBitCount ) &&& 0b11_1111
                 let hiCharVal = bitValue * Reciprocal91Shift24 >>> 24
                 outChars.[ charIndex ] <- configuration.ValueToChar.[ bitValue - ( hiCharVal * 91 ) ]
+                charIndex <- charIndex + 1
+                colIndex <- colIndex + 1
 
-            String outChars
+            if charIndex = outChars.Length then
+                String outChars
+            else
+                String( outChars , 0 , charIndex )
 
         else ""
 
     let decodeInternal ( configuration : BinaryToTextConfiguration ) ( str : string ) =
         if isNull str then raise ( ArgumentNullException( "str" ) )
 
-        let inputLength = usableLength str
-
-        let outBytes : byte array = Array.zeroCreate ( charCountToByteCount inputLength )
+        let outBytes : byte array = Array.zeroCreate ( charCountToByteCount str.Length )
 
         let mutable prevCharCode = 0
         let mutable byteIndex = 0
@@ -119,28 +123,33 @@ module private Base91Utils =
                 else
                     // Decode 2 char chunk into 13 bits
                     let hiDecode , loDecode = configuration.CharCodeToValue.[ prevCharCode ] , configuration.CharCodeToValue.[ currCharCode ]
-                    if hiDecode <> InvalidDecode && loDecode <> InvalidDecode then
-                        bitBuffer <- bitBuffer <<< 13 ||| ( hiDecode * 91 + loDecode )
-                        fullChunkBitOffset <- fullChunkBitOffset + 13
-                        prevCharCode <- 0
-                        // Copy 16 bits into 2 bytes
-                        if fullChunkBitOffset >= 0 then
-                            let bitValue = bitBuffer >>> fullChunkBitOffset
-                            outBytes.[ byteIndex ] <- bitValue >>> 8 |> byte
-                            outBytes.[ byteIndex + 1 ] <- bitValue |> byte
-                            byteIndex <- byteIndex + 2
-                            fullChunkBitOffset <- fullChunkBitOffset - 16
-                    elif hiDecode = InvalidDecode then raiseFormatException "invalid input: invalid char '%c'" ( char prevCharCode )
-                    elif loDecode = InvalidDecode then raiseFormatException "invalid input: invalid char '%c'" ( char currCharCode )
-            elif not ( isCharWhitespace currCharCode ) then raiseFormatException "invalid input: invalid char code 0x%x" currCharCode
+                    if hiDecode <> InvalidChar && loDecode <> InvalidChar then
+                        let value = hiDecode * 91 + loDecode
+                        if value <= 0b1_1111_1111_1111 then
+                            bitBuffer <- bitBuffer <<< 13 ||| value
+                            fullChunkBitOffset <- fullChunkBitOffset + 13
+                            prevCharCode <- 0
+                            // Copy 16 bits into 2 bytes
+                            if fullChunkBitOffset >= 0 then
+                                let bitValue = bitBuffer >>> fullChunkBitOffset
+                                outBytes.[ byteIndex ] <- bitValue >>> 8 |> byte
+                                outBytes.[ byteIndex + 1 ] <- bitValue |> byte
+                                byteIndex <- byteIndex + 2
+                                fullChunkBitOffset <- fullChunkBitOffset - 16
+                        else raiseFormatException "invalid input: bit value too high for character pair '%c%c'" ( char prevCharCode ) ( char currCharCode )
+                    elif hiDecode = InvalidChar then raiseFormatException "invalid input: invalid character '%c'" ( char prevCharCode )
+                    elif loDecode = InvalidChar then raiseFormatException "invalid input: invalid character '%c'" ( char currCharCode )
+            elif not ( isCharWhitespace currCharCode ) then raiseFormatException "invalid input: invalid character code 0x%x" currCharCode
 
         // Decode 1 trailing char as 6 bits into buffer
         if prevCharCode <> 0 then
             let loDecode = configuration.CharCodeToValue.[ prevCharCode ]
-            if loDecode <> InvalidDecode then
+            if loDecode <> InvalidChar && loDecode <= 0b11_1111 then
                 bitBuffer <- bitBuffer <<< 6 ||| loDecode
                 fullChunkBitOffset <- fullChunkBitOffset + 6
-            else raiseFormatException "invalid input: invalid char '%c'" ( char prevCharCode )
+            elif loDecode > 0b11_1111 then
+                raiseFormatException "invalid input: bit value too high for final character '%c'" ( char prevCharCode )
+            else raiseFormatException "invalid input: invalid final character '%c'" ( char prevCharCode )
 
         // Copy any remaining 8-bit chunks to output
         while fullChunkBitOffset >= -8 do
@@ -172,11 +181,14 @@ module private Base91Utils =
         //  16 chars = 104 bits = 13 bytes, 0 bits leftover
         if fullChunkBitOffset > -16 then
             let leftoverBitCount = fullChunkBitOffset + 16
-            if leftoverBitCount = 7 || ( leftoverBitCount = 6 && divisibleBy13 byteIndex ) then raiseFormatException "invalid input: extra char"
+            if leftoverBitCount = 7 || ( leftoverBitCount = 6 && divisibleBy13 byteIndex ) then raiseFormatException "invalid input: unused final character"
             let leftoverBitValue = bitBuffer <<< ( 8 - leftoverBitCount ) &&& 0b1111_1111
             if leftoverBitValue > 0 then raiseFormatException "invalid input: extra non-zero bits" // overflow bits should all be zero
 
-        outBytes
+        if byteIndex = outBytes.Length then
+            outBytes
+        else
+            Array.truncate byteIndex outBytes
 
     let [< Literal >] defaultCharacterSet = "!#$%&()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~"
 

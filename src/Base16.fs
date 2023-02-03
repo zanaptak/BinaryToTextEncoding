@@ -30,15 +30,17 @@ module private Base16Utils =
                 charIndex <- charIndex + 2
                 colIndex <- colIndex + 2
 
-            String outChars
+            if charIndex = outChars.Length then
+                String outChars
+            else
+                String( outChars , 0 , charIndex )
 
         else ""
 
     let decodeInternal ( configuration : BinaryToTextConfiguration ) ( str : string ) =
         if isNull str then raise ( ArgumentNullException( "str" ) )
-        let inputLength = usableLength str
 
-        let outBytes : byte array = Array.zeroCreate ( inputLength / 2 )
+        let outBytes : byte array = Array.zeroCreate ( str.Length / 2 )
         let mutable byteIndex = 0
         let mutable prevCharCode = 0
 
@@ -50,17 +52,20 @@ module private Base16Utils =
                 else
                     // Decode 2 char chunk into 1 byte
                     let hiDecode , loDecode = configuration.CharCodeToValue.[ prevCharCode ] , configuration.CharCodeToValue.[ currCharCode ]
-                    if hiDecode <> InvalidDecode && loDecode <> InvalidDecode then
+                    if hiDecode <> InvalidChar && loDecode <> InvalidChar then
                         outBytes.[ byteIndex ] <- hiDecode <<< 4 ||| loDecode |> byte
                         byteIndex <- byteIndex + 1
                         prevCharCode <- 0
-                    elif hiDecode = InvalidDecode then raiseFormatException "invalid input: invalid char '%c'" ( char prevCharCode )
-                    elif loDecode = InvalidDecode then raiseFormatException "invalid input: invalid char '%c'" ( char currCharCode )
-            elif not ( isCharWhitespace currCharCode ) then raiseFormatException "invalid input: invalid char code 0x%x" currCharCode
+                    elif hiDecode = InvalidChar then raiseFormatException "invalid input: invalid character '%c'" ( char prevCharCode )
+                    elif loDecode = InvalidChar then raiseFormatException "invalid input: invalid character '%c'" ( char currCharCode )
+            elif not ( isCharWhitespace currCharCode ) then raiseFormatException "invalid input: invalid character code 0x%x" currCharCode
 
-        if prevCharCode <> 0 then raiseFormatException "invalid input: extra char '%c'" ( char prevCharCode )
+        if prevCharCode <> 0 then raiseFormatException "invalid input: unused final character '%c'" ( char prevCharCode )
 
-        outBytes
+        if byteIndex = outBytes.Length then
+            outBytes
+        else
+            Array.truncate byteIndex outBytes
 
     let [< Literal >] defaultCharacterSet = "0123456789ABCDEF"
 
@@ -91,6 +96,7 @@ type Base16 private ( configuration : BinaryToTextConfiguration ) =
     /// <summary>Creates a Base16 encoder/decoder using the specified options. 2 characters = 1 byte; 1 character = 4 bits.</summary>
     /// <param name='characterSet'>A 16-character string. Characters must be in the range U+0021 to U+007E. Default: 0123456789ABCDEF</param>
     /// <param name='useCrLfNewline'>Specifies whether to use CRLF (true) or LF (false) when encoding with the wrap option. Default: true</param>
+    /// <param name='forceCaseSensitive'>Specifies whether to require letters to match their case in the character set when decoding, even when the character set has no repeat letters and could otherwise accept either case. Default: false</param>
     new
         (
             [< Optional ; DefaultParameterValue( defaultCharacterSet ) >] characterSet : string

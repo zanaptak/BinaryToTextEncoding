@@ -46,6 +46,12 @@ module private Base91LegacyUtils =
             let mutable bitBuffer = 0
             let mutable bitCount = 0
 
+            let inline wrapIfNeeded() =
+                if wrapAtCol > 0 && colIndex >= wrapAtCol then
+                    Array.Copy( configuration.Newline , 0 , outChars , charIndex , configuration.Newline.Length )
+                    charIndex <- charIndex + configuration.Newline.Length
+                    colIndex <- 0
+
             for byte in bytes do
                 bitBuffer <- byte |> int <<< bitCount ||| bitBuffer
                 bitCount <- bitCount + 8
@@ -56,10 +62,7 @@ module private Base91LegacyUtils =
                 //    then we can also represent 14th bit whether it is 0 or 1
                 //    (if 14th bit is 0, value will be <= 88; if 1, value will be >= 8192 up to the max of 8280)
                 if bitCount > 13 then
-                    if wrapAtCol > 0 && colIndex >= wrapAtCol then
-                        Array.Copy( configuration.Newline , 0 , outChars , charIndex , configuration.Newline.Length )
-                        charIndex <- charIndex + configuration.Newline.Length
-                        colIndex <- 0
+                    wrapIfNeeded()
                     let bitValue = bitBuffer &&& 0b1_1111_1111_1111 // 13 bits
                     if bitValue > 88 then
                         let hiCharVal = bitValue * Reciprocal91Shift24 >>> 24
@@ -81,20 +84,16 @@ module private Base91LegacyUtils =
             // Encode final partial chunk if necessary
             if bitCount >= 7 then
                 // 2 chars for 7-13 bits
-                if wrapAtCol > 0 && colIndex >= wrapAtCol then
-                    Array.Copy( configuration.Newline , 0 , outChars , charIndex , configuration.Newline.Length )
-                    charIndex <- charIndex + configuration.Newline.Length
+                wrapIfNeeded()
                 let hiCharVal = bitBuffer * Reciprocal91Shift24 >>> 24
                 outChars.[ charIndex ] <- configuration.ValueToChar.[ bitBuffer - ( hiCharVal * 91 ) ] // low digit first in legacy algorithm
                 outChars.[ charIndex + 1 ] <- configuration.ValueToChar.[ hiCharVal ]
                 charIndex <- charIndex + 2
             elif bitCount > 0 then
                 // 1 char for 1-6 bits
-                if wrapAtCol > 0 && colIndex >= wrapAtCol then
-                    Array.Copy( configuration.Newline , 0 , outChars , charIndex , configuration.Newline.Length )
-                    charIndex <- charIndex + configuration.Newline.Length
+                wrapIfNeeded()
                 let hiCharVal = bitBuffer * Reciprocal91Shift24 >>> 24
-                outChars.[ charIndex ] <- configuration.ValueToChar.[ bitBuffer - ( hiCharVal * 91 ) ]
+                outChars.[ charIndex ] <- configuration.ValueToChar.[ bitBuffer - ( hiCharVal * 91 ) ] // final trailing low digit
                 charIndex <- charIndex + 1
 
             if charIndex = outChars.Length then
@@ -107,9 +106,7 @@ module private Base91LegacyUtils =
     let decodeInternal ( configuration : BinaryToTextConfiguration ) ( str : string ) =
         if isNull str then raise ( ArgumentNullException( "str" ) )
 
-        let inputLength = usableLength str
-
-        let outBytes : byte array = Array.zeroCreate ( charCountToByteCountLegacy inputLength )
+        let outBytes : byte array = Array.zeroCreate ( charCountToByteCountLegacy str.Length )
 
         let mutable byteIndex = 0
         let mutable prevCharCode = 0
@@ -124,8 +121,8 @@ module private Base91LegacyUtils =
                 else
                     // Decode 2 char chunk into 13-14 bits
                     let loDecode , hiDecode = configuration.CharCodeToValue.[ prevCharCode ] , configuration.CharCodeToValue.[ currCharCode ]
-                    if hiDecode <> InvalidDecode && loDecode <> InvalidDecode then
-                        let bitValue = hiDecode * 91 + loDecode
+                    if hiDecode <> InvalidChar && loDecode <> InvalidChar then
+                        let bitValue = hiDecode * 91 + loDecode // all char pairs used in legacy algorithm, no need to sanity check value
                         bitBuffer <- bitValue <<< bitCount ||| bitBuffer
                         if bitValue &&& 0b1_1111_1111_1111 > 88 then
                             bitCount <- bitCount + 13
@@ -137,21 +134,23 @@ module private Base91LegacyUtils =
                             byteIndex <- byteIndex + 1
                             bitBuffer <- bitBuffer >>> 8
                             bitCount <- bitCount - 8
-                    elif loDecode = InvalidDecode then raiseFormatException "invalid input: invalid char '%c'" ( char prevCharCode )
-                    elif hiDecode = InvalidDecode then raiseFormatException "invalid input: invalid char '%c'" ( char currCharCode )
-            elif not ( isCharWhitespace currCharCode ) then raiseFormatException "invalid input: invalid char code 0x%x" currCharCode
+                    elif loDecode = InvalidChar then raiseFormatException "invalid input: invalid character '%c'" ( char prevCharCode )
+                    elif hiDecode = InvalidChar then raiseFormatException "invalid input: invalid character '%c'" ( char currCharCode )
+            elif not ( isCharWhitespace currCharCode ) then raiseFormatException "invalid input: invalid character code 0x%x" currCharCode
 
         if prevCharCode <> 0 then
             // Decode 1 trailing char into 6 bits
             let loDecode = configuration.CharCodeToValue.[ prevCharCode ]
-            if loDecode <> InvalidDecode then
+            if loDecode <> InvalidChar && loDecode <= 0b11_1111 then
                 bitBuffer <- loDecode &&& 0b11_1111 <<< bitCount ||| bitBuffer
                 bitCount <- bitCount + 6
                 if bitCount >= 8 then
                     outBytes.[ byteIndex ] <- bitBuffer &&& 0b1111_1111 |> byte
                     byteIndex <- byteIndex + 1
                     bitBuffer <- bitBuffer >>> 8
-            else raiseFormatException "invalid input: invalid char '%c'" ( char prevCharCode )
+            elif loDecode > 0b11_1111 then
+                raiseFormatException "invalid input: bit value too high for final character '%c'" ( char prevCharCode )
+            else raiseFormatException "invalid input: invalid character '%c'" ( char prevCharCode )
 
         if bitBuffer > 0 then raiseFormatException "invalid input: extra non-zero bits" // overflow bits should all be zero
         if byteIndex = outBytes.Length then
